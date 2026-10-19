@@ -45,9 +45,13 @@ function pressed(on: boolean): string {
   return `aria-pressed="${on}"`;
 }
 
-/** 화면 안에 띄우는 대화상자. Esc·바깥 누르기·닫기 버튼으로 닫힌다 */
-function openModal(host: HTMLElement, content: HTMLElement, label: string): () => void {
+/**
+ * 화면 안에 띄우는 대화상자. Esc·바깥 누르기·닫기 버튼으로 닫힌다.
+ * reopen은 화면을 다시 그린 뒤 같은 창을 되살리는 경우라 등장 연출 없이 그대로 보이고, 그 선택자에 초점을 둔다
+ */
+function openModal(host: HTMLElement, content: HTMLElement, label: string, reopen?: string): () => void {
   const backdrop = html(`<div class="modal-backdrop"><div class="modal" role="dialog" aria-modal="true"></div></div>`);
+  if (reopen) backdrop.classList.add('instant');
   const modal = backdrop.querySelector('.modal')!;
   modal.setAttribute('aria-label', label);
   modal.append(content);
@@ -75,15 +79,23 @@ function openModal(host: HTMLElement, content: HTMLElement, label: string): () =
     window.removeEventListener('resize', fit);
     if (opener?.isConnected) opener.focus();
   };
-  backdrop.addEventListener('pointerdown', (e) => {
-    if (e.target === backdrop) close();
+  // 딤을 눌러 닫을 때는 누름과 뗌이 모두 딤 위여야 한다. pointerdown에서 바로 닫으면 딤이 사라진 뒤
+  // 이어지는 click이 아래 화면(도감 칸 등)에 떨어져 다른 창이 곧바로 열린다
+  let downOnBackdrop = false;
+  backdrop.addEventListener('pointerdown', (e) => (downOnBackdrop = e.target === backdrop));
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop && downOnBackdrop) close();
+    downOnBackdrop = false;
   });
-  content.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', close));
+  // 내용이 바뀌어도(도감 넘기기) 닫기 버튼이 동작하도록 위임한다
+  content.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('[data-close]')) close();
+  });
   document.addEventListener('keydown', onKey, true);
   window.addEventListener('resize', fit);
   fit();
   document.body.append(backdrop);
-  content.querySelector<HTMLElement>('[aria-pressed="true"], button')?.focus();
+  (content.querySelector<HTMLElement>(reopen || '[aria-pressed="true"]') ?? content.querySelector('button'))?.focus();
   return close;
 }
 
@@ -95,13 +107,17 @@ export interface StartOptions {
   todayLabel: string;
   todaySkin: Skin;
   onPlay: (mode: Mode) => void;
-  onToggle: (key: 'sound' | 'shake') => void;
+  onToggle: (key: Toggle) => void;
   onLang: (lang: Lang) => void;
   onTheme: (theme: Theme) => void;
   onSkin: (skin: SkinSetting) => void;
   onReset: () => void;
   /** 다시 그린 뒤 설정 창을 열어 둘지. 'reset'이면 초기화 완료 문구도 보인다 */
   settings?: 'open' | 'reset';
+  /** 페이지에 처음 들어왔을 때만 오프닝 연출을 튼다 */
+  opening?: boolean;
+  /** 다시 연 설정 창에서 초점을 둘 버튼 */
+  settingsFocus?: string;
 }
 
 export function startScreen(opts: StartOptions): HTMLElement {
@@ -118,22 +134,32 @@ export function startScreen(opts: StartOptions): HTMLElement {
       <button class="corner right icon-btn settings-btn" aria-label="${t('settings.open')}">${ICONS.gear}</button>
       <div class="col main-col">
         ${holeMarkup('title-hole')}
-        <h1>${t('app.title')} <span class="title-hammer">${HAMMER}</span></h1>
+        <h1 aria-label="${t('app.title')}"><span class="title-text" aria-hidden="true">${titleLetters(t('app.title'))}</span> <span class="title-hammer">${HAMMER}</span></h1>
         <p class="tagline">${t('app.tagline')}</p>
         <div class="modes">
           <button class="btn primary" data-mode="classic">${t('start.classic')}</button>
-          <button class="btn" data-mode="daily">${t('start.daily')} <small>${t('start.dailySub', { date: opts.todayLabel })}</small></button>
+          <button class="btn daily" data-mode="daily">
+            <span class="cal" aria-hidden="true"><i></i><b>${Number(opts.today.slice(-2))}</b></span>
+            <span class="daily-text">${t('start.daily')} <small>${t('start.dailySub', { date: opts.todayLabel })}</small></span>
+            <span class="go">${ICONS.arrow}</span>
+          </button>
         </div>
         <p class="best">${t('start.best', { best: save.best, daily: dailyBest })}</p>
       </div>
       <div class="col side-col">
         <section class="dex" aria-label="${t('dex.title')}">
           <h2>${t('dex.title')} <small>${dex.size}/${MOLE_ORDER.length}</small></h2>
-          <ul>${MOLE_ORDER.map((k) => `<li>${dexItem(k, dex.has(k))}</li>`).join('')}</ul>
+          <ul>${MOLE_ORDER.map((k, i) => `<li style="--i:${i}">${dexItem(k, dex.has(k))}</li>`).join('')}</ul>
         </section>
         <p class="hint">${t('start.hint')}</p>
       </div>
     </main>`);
+
+  if (opts.opening) {
+    el.classList.add('opening');
+    // 누르면 바로 건너뛴다. 저절로 끝날 때는 클래스를 그대로 둬야 이어지는 망치·두더지 연출이 처음부터 다시 돌지 않는다
+    el.addEventListener('pointerdown', () => el.classList.remove('opening'), { once: true });
+  }
 
   const titleMole = createMoleEl('normal');
   el.querySelector('.title-hole .slot')!.append(titleMole);
@@ -146,15 +172,20 @@ export function startScreen(opts: StartOptions): HTMLElement {
   el.querySelector('.lang-btn')!.addEventListener('click', () => opts.onLang(otherLang));
   el.querySelectorAll<HTMLButtonElement>('.dex [data-kind]').forEach((b) =>
     b.addEventListener('click', () => {
-      const kind = b.dataset.kind as MoleKind;
-      openModal(el, dexDetail(kind, save.kills[kind]), moleName(kind));
+      const found = MOLE_ORDER.filter((k) => dex.has(k));
+      openDexBrowser(el, found, found.indexOf(b.dataset.kind as MoleKind), save);
     }),
   );
 
-  const showSettings = () => openModal(el, settingsPanel(opts), t('settings.title'));
-  el.querySelector('.settings-btn')!.addEventListener('click', showSettings);
-  if (opts.settings) queueMicrotask(showSettings);
+  const showSettings = (reopen?: string) => openModal(el, settingsPanel(opts), t('settings.title'), reopen);
+  el.querySelector('.settings-btn')!.addEventListener('click', () => showSettings());
+  if (opts.settings) queueMicrotask(() => showSettings(opts.settingsFocus ?? (opts.settings === 'reset' ? '[data-reset]' : '[aria-pressed="true"]')));
   return el;
+}
+
+/** 제목을 한 글자씩 떨어뜨리려고 글자마다 감싼다 */
+function titleLetters(title: string): string {
+  return [...title].map((c, i) => (c === ' ' ? ' ' : `<span class="ch" style="--i:${i}">${c}</span>`)).join('');
 }
 
 function dexItem(kind: MoleKind, found: boolean): string {
@@ -174,6 +205,85 @@ function appearLabel(kind: MoleKind): string {
   return from === 0 ? t('dex.fromStart') : t('dex.fromSec', { s: from / 1000 });
 }
 
+/**
+ * 도감 설명 창. 좌우 버튼·스와이프·←→ 키로 만난 두더지를 차례로 넘기고, 끝에서는 처음으로 돌아간다
+ */
+function openDexBrowser(host: HTMLElement, kinds: MoleKind[], start: number, save: SaveData): void {
+  const box = html(`<div class="dex-browser"></div>`);
+  let index = Math.max(0, start);
+  let modal: HTMLElement | null = null;
+
+  // 만난 두더지 설명을 모두 한 칸에 겹쳐 두고 지금 것만 보인다. 창 높이가 늘 가장 긴 설명에 맞춰져
+  // 넘기기 버튼이 두더지마다 위아래로 움직이지 않는다(글꼴이 늦게 불러와지거나 창 크기가 바뀌어도 그대로)
+  const details = kinds.map((kind) => dexDetail(kind, save.kills[kind]));
+  const stack = html(`<div class="dex-stack"></div>`);
+  stack.append(...details);
+  const nav =
+    kinds.length > 1
+      ? html(`<div class="dex-nav">
+          <button class="dex-arrow prev" data-step="-1" aria-label="${t('dex.prev')}">${MORE_ICONS.chevronLeft}</button>
+          <p class="dex-pager" aria-live="polite"></p>
+          <button class="dex-arrow next" data-step="1" aria-label="${t('dex.next')}">${MORE_ICONS.chevronRight}</button>
+        </div>`)
+      : null;
+  // 닫기 버튼은 넘길 때 함께 미끄러지지 않도록 설명 밖에 하나만 둔다
+  box.append(html(closeButton()), stack, ...(nav ? [nav] : []));
+
+  const render = (dir: 0 | 1 | -1) => {
+    details.forEach((d, i) => {
+      const on = i === index;
+      d.classList.toggle('current', on);
+      d.classList.remove('from-right', 'from-left');
+      d.inert = !on;
+      d.toggleAttribute('aria-hidden', !on);
+    });
+    const cur = details[index];
+    if (dir) {
+      void cur.offsetWidth; // 같은 방향으로 연달아 넘겨도 슬라이드가 다시 돌게
+      cur.classList.add(dir > 0 ? 'from-right' : 'from-left');
+    }
+    if (nav) nav.querySelector('.dex-pager')!.textContent = `${index + 1} / ${kinds.length}`;
+    modal?.setAttribute('aria-label', moleName(kinds[index]));
+  };
+  const step = (d: 1 | -1) => {
+    if (kinds.length < 2) return;
+    index = (index + d + kinds.length) % kinds.length;
+    render(d);
+  };
+
+  box.addEventListener('click', (e) => {
+    const btn = (e.target as Element).closest<HTMLElement>('[data-step]');
+    if (btn) step(Number(btn.dataset.step) as 1 | -1);
+  });
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') step(-1);
+    else if (e.key === 'ArrowRight') step(1);
+    else return;
+    e.preventDefault();
+  });
+  // 스와이프: 가로로 충분히(48px) 밀었고 세로보다 가로 움직임이 클 때만
+  let sx = 0;
+  let sy = 0;
+  let tracking = false;
+  box.addEventListener('pointerdown', (e) => {
+    if ((e.target as Element).closest('button')) return;
+    tracking = true;
+    sx = e.clientX;
+    sy = e.clientY;
+  });
+  box.addEventListener('pointerup', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = e.clientX - sx;
+    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(e.clientY - sy) * 1.2) step(dx < 0 ? 1 : -1);
+  });
+  box.addEventListener('pointercancel', () => (tracking = false));
+
+  render(0);
+  openModal(host, box, moleName(kinds[index]));
+  modal = box.closest('.modal');
+}
+
 function dexDetail(kind: MoleKind, count: number): HTMLElement {
   const def = MOLES[kind];
   const el = html(`
@@ -190,9 +300,24 @@ function dexDetail(kind: MoleKind, count: number): HTMLElement {
       <p class="detail-count">${t(def.good ? 'dex.caught' : 'dex.exploded', { n: count })}</p>
     </div>`);
   const mole = createMoleEl(kind);
-  mole.classList.add('up');
+  mole.classList.add('up', 'looky');
   el.querySelector('.detail-hole .slot')!.append(mole);
   return el;
+}
+
+type Toggle = 'sound' | 'shake';
+
+const TOGGLE_ICONS: Record<Toggle, [on: string, off: string]> = {
+  sound: [ICONS.soundOn, ICONS.soundOff],
+  shake: [ICONS.shakeOn, ICONS.shakeOff],
+};
+
+function toggleInner(key: Toggle, on: boolean): string {
+  return `${TOGGLE_ICONS[key][on ? 0 : 1]}<span class="label">${t(`${key}.${on ? 'on' : 'off'}`)}</span>`;
+}
+
+function toggleChip(key: Toggle, on: boolean): string {
+  return `<button class="chip" data-toggle="${key}" ${pressed(on)}>${toggleInner(key, on)}</button>`;
 }
 
 function settingsPanel(opts: StartOptions): HTMLElement {
@@ -225,8 +350,8 @@ function settingsPanel(opts: StartOptions): HTMLElement {
         <section class="toggle-section">
           <h3>${t('settings.feedback')}</h3>
           <div class="toggles">
-            <button class="chip" data-toggle="sound" ${pressed(save.sound)}>${save.sound ? ICONS.soundOn : ICONS.soundOff}<span class="label">${t(save.sound ? 'sound.on' : 'sound.off')}</span></button>
-            <button class="chip" data-toggle="shake" ${pressed(save.shake)}>${save.shake ? ICONS.shakeOn : ICONS.shakeOff}<span class="label">${t(save.shake ? 'shake.on' : 'shake.off')}</span></button>
+            ${toggleChip('sound', save.sound)}
+            ${toggleChip('shake', save.shake)}
           </div>
         </section>
         <section class="reset-section">
@@ -264,8 +389,14 @@ function settingsPanel(opts: StartOptions): HTMLElement {
       if (b.dataset.lang !== lang) opts.onLang(b.dataset.lang as Lang);
     }),
   );
+  // 소리·진동은 화면을 다시 그리지 않고 버튼만 바꾼다
   el.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((b) =>
-    b.addEventListener('click', () => opts.onToggle(b.dataset.toggle as 'sound' | 'shake')),
+    b.addEventListener('click', () => {
+      const key = b.dataset.toggle as Toggle;
+      opts.onToggle(key);
+      b.setAttribute('aria-pressed', String(save[key]));
+      b.innerHTML = toggleInner(key, save[key]);
+    }),
   );
 
   const resetBtn = el.querySelector<HTMLButtonElement>('[data-reset]')!;

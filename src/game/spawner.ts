@@ -11,6 +11,8 @@ export interface Segment {
   maxActive: number;
   /** 동시에 나와 있을 수 있는 폭탄 수 */
   maxBombs: number;
+  /** 머리만 살짝 내밀고 엿보다 나올 확률(0–1). 그중 일부는 나오지 않고 도로 들어간다 */
+  peek: number;
   /** 등장 가중치. 구간마다 합이 100이라 그대로 퍼센트로 읽힌다 */
   weights: Partial<Record<MoleKind, number>>;
   /** 이 구간에서 처음 선보이는 두더지. 이번 판에 아직 안 나왔다면 구간 초반에 하나씩 확정으로 내보낸다 */
@@ -32,6 +34,7 @@ export const SEGMENTS: Segment[] = [
     exposure: 1_100,
     maxActive: 1,
     maxBombs: 0,
+    peek: 0.14,
     weights: { normal: 92, golden: 8 },
     debut: ['golden'],
   },
@@ -42,6 +45,7 @@ export const SEGMENTS: Segment[] = [
     exposure: 1_000,
     maxActive: 2,
     maxBombs: 1,
+    peek: 0.2,
     weights: { normal: 76, golden: 6, bomb: 18 },
     debut: ['bomb'],
   },
@@ -52,6 +56,7 @@ export const SEGMENTS: Segment[] = [
     exposure: 850,
     maxActive: 2,
     maxBombs: 1,
+    peek: 0.24,
     weights: { normal: 53, golden: 6, bomb: 14, helmet: 11, swift: 11, clock: 2.5, ice: 2.5 },
     debut: ['helmet', 'swift'],
   },
@@ -62,6 +67,7 @@ export const SEGMENTS: Segment[] = [
     exposure: 650,
     maxActive: 3,
     maxBombs: 2,
+    peek: 0.26,
     weights: { normal: 45, golden: 6, bomb: 18, helmet: 10, swift: 11, clock: 4, ice: 6 },
   },
   {
@@ -71,6 +77,7 @@ export const SEGMENTS: Segment[] = [
     exposure: 600,
     maxActive: 3,
     maxBombs: 2,
+    peek: 0.18,
     weights: { normal: 54, golden: 12, bomb: 16, helmet: 8, swift: 10 },
   },
 ];
@@ -83,6 +90,7 @@ export const FEVER_SEGMENT: Segment = {
   exposure: 900,
   maxActive: 4,
   maxBombs: 0,
+  peek: 0,
   weights: { normal: 75, golden: 25 },
 };
 

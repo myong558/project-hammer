@@ -42,7 +42,7 @@ function vibrate(pattern: number | number[]): void {
   if (save.shake) navigator.vibrate?.(pattern);
 }
 
-function showStart(settings?: 'open' | 'reset'): void {
+function showStart(settings?: 'open' | 'reset', settingsFocus?: string, opening = false): void {
   const today = new Date();
   const todaySkin = resolveSkin('auto', today);
   applySkin(resolveSkin(save.skin, today));
@@ -53,18 +53,21 @@ function showStart(settings?: 'open' | 'reset'): void {
       todayLabel: todayLabel(today),
       todaySkin,
       settings,
+      settingsFocus,
+      opening,
       onPlay: play,
       onToggle(key) {
         save[key] = !save[key];
         sound.enabled = save.sound;
         writeSave(save);
-        showStart(document.querySelector('.modal .settings') ? 'open' : undefined);
       },
       onLang(lang) {
         save.lang = lang;
         setLang(lang);
         writeSave(save);
-        showStart(document.querySelector('.modal .settings') ? 'open' : undefined);
+        // 글자가 모두 바뀌므로 다시 그리되, 설정 창은 깜빡임 없이 그 자리에 둔다
+        const inSettings = !!document.querySelector('.modal .settings');
+        showStart(inSettings ? 'open' : undefined, inSettings ? `[data-lang="${lang}"]` : undefined);
       },
       onTheme(theme) {
         save.theme = theme;
@@ -105,7 +108,7 @@ function play(mode: Mode): void {
   const fx = new Effects(view.stage, () => save.shake);
   const hammer = new Hammer(view.stage);
   const board = new Board(view.board, (hole) => game.hit(hole));
-  const hud = new Hud(view.hud, game);
+  const hud = new Hud(view.hud, game, view.el.querySelector<HTMLElement>('.pause-btn'));
   const timers = new Set<ReturnType<typeof setTimeout>>();
   const later = (ms: number, fn: () => void) => {
     const id = setTimeout(() => {
@@ -154,6 +157,12 @@ function play(mode: Mode): void {
       case 'spawn':
         board.spawn(e.mole);
         if (e.mole.kind === 'king') fx.banner(t('banner.kingAppear'), 'king');
+        break;
+      case 'emerge':
+        board.emerge(e.mole);
+        break;
+      case 'duck':
+        board.duck(e.mole);
         break;
       case 'jump':
         board.jump(e.mole, e.from);
@@ -226,7 +235,7 @@ function play(mode: Mode): void {
       case 'feverStart':
         view.el.classList.add('fever');
         sound.pitch = 1.25;
-        fx.banner('Awesome! 🔥 FEVER x2', 'fever');
+        fx.banner(t('banner.fever'), 'fever');
         sound.play('fever');
         break;
       case 'feverEnd':
@@ -349,4 +358,4 @@ function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: 
   teardown = () => window.removeEventListener('keydown', onKey);
 }
 
-showStart();
+showStart(undefined, undefined, true);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COUNTDOWN, DEBUT_GAP, DURATION, GOLDEN_PITY, Game } from '../src/game/engine';
+import { COUNTDOWN, DEBUT_GAP, DURATION, GOLDEN_PITY, EMERGE_RISE, Game, PEEK_FROM } from '../src/game/engine';
 import { mulberry32 } from '../src/game/rng';
 import { FEVER_COMBO } from '../src/game/scoring';
 import { FEVER_SEGMENT, SEGMENTS, neighbors, pickKind, segmentIndexAt } from '../src/game/spawner';
@@ -237,6 +237,75 @@ describe('Game', () => {
       for (let i = 1; i < kinds.length; i++) {
         if (kinds[i] !== 'normal') expect(kinds[i]).not.toBe(kinds[i - 1]);
       }
+    }
+  });
+
+  it('엿보는 두더지는 아직 안 나온 것이라 치면 헛치기가 된다', () => {
+    const { game, events } = playingGame();
+    game.place('normal', 2, { peek: 500 });
+    game.hit(2);
+    expect(events.at(-1)).toEqual({ type: 'whiff', hole: 2 });
+    expect(game.moles).toHaveLength(1);
+  });
+
+  it('엿보기가 끝나면 다 올라오고, 노출 시간은 그때부터 센다', () => {
+    const { game, events } = playingGame();
+    const mole = game.place('normal', 2, { peek: 500 })!;
+    const exposure = mole.hideAt - mole.peekUntil;
+    game.tick(500);
+    expect(events.at(-1)).toEqual({ type: 'emerge', mole });
+    expect(mole.peekUntil).toBe(0);
+    expect(mole.hideAt - game.time).toBe(exposure + EMERGE_RISE);
+    game.tick(EMERGE_RISE);
+    game.hit(2);
+    expect(game.score).toBe(10);
+  });
+
+  it('엿보던 두더지는 다 올라오기 전(올라오는 중)에 치면 헛치기가 된다', () => {
+    const { game, events } = playingGame();
+    game.place('normal', 2, { peek: 500 });
+    game.tick(500);
+    expect(events.at(-1)?.type).toBe('emerge');
+    game.hit(2);
+    expect(events.at(-1)).toEqual({ type: 'whiff', hole: 2 });
+    expect(game.score).toBe(0);
+    game.tick(EMERGE_RISE + 300);
+    game.hit(2);
+    expect(game.score).toBe(10);
+  });
+
+  it('속임수 두더지는 엿보기만 하고 들어가며, 놓친 것으로 치지 않는다', () => {
+    const { game, events } = playingGame();
+    game.place('normal', 0);
+    game.hit(0);
+    const mole = game.place('normal', 2, { peek: 500, fake: true })!;
+    game.tick(500);
+    expect(events).toContainEqual({ type: 'duck', mole });
+    expect(game.moles).not.toContain(mole);
+    expect(game.combo).toBe(1);
+    expect(game.stats.missed).toBe(0);
+  });
+
+  it('엿보기는 ${PEEK_FROM / 1000}초 뒤부터, 보상 두더지는 속임수가 없고, 처음 나오는 두더지는 엿보지 않는다', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const game = new Game(mulberry32(seed));
+      const firsts = new Set<MoleKind>();
+      game.on((e) => {
+        if (e.type !== 'spawn' || e.mole.kind === 'king') return;
+        const { mole } = e;
+        if (mole.peekUntil > 0) {
+          expect(game.progress).toBeGreaterThanOrEqual(PEEK_FROM);
+          expect(game.inFever).toBe(false);
+          if (mole.fake) expect(['normal', 'bomb', 'helmet', 'swift']).toContain(mole.kind);
+        }
+        if (!firsts.has(mole.kind)) {
+          firsts.add(mole.kind);
+          expect(mole.peekUntil).toBe(0);
+        }
+      });
+      game.start();
+      game.tick(COUNTDOWN);
+      while (game.phase === 'playing') game.tick(50);
     }
   });
 

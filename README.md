@@ -129,6 +129,7 @@ Project Hammer 🔨 10/19
 | 언어 | TypeScript | 게임 상태 타입 안정성 |
 | UI | 순수 DOM + CSS | 9~16칸 그리드에 프레임워크·Canvas 불필요 |
 | 애니메이션 | CSS transform/transition, keyframes | 두더지 올라옴/내려감, 타격·기절·화면 흔들림 |
+| 글꼴 | [여기어때 잘난체 2 · 잘난체 고딕](https://gccompany.co.kr/font) (© 여기어때컴퍼니) | 통통한 게임 느낌, 상업적 사용 무료. 원본 그대로 WOFF2로만 압축해 `src/fonts/`에 두고 최소 18px |
 | 사운드 | Web Audio API | 지연 없는 효과음, 피버 시 음높이 변경 |
 | 저장 | localStorage | 최고 기록·도감·설정 저장 (실패 시 무시) |
 | 테스트 | Vitest | 게임 로직 단위 테스트 |

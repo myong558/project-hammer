@@ -15,7 +15,8 @@ export class Hud {
   private readonly missionProgress: HTMLElement;
   private readonly last = new Map<string, string>();
 
-  constructor(readonly el: HTMLElement, game: Game) {
+  /** trailing: 점수·시간·콤보 줄 끝에 함께 놓아 높이를 맞출 요소(일시정지 버튼) */
+  constructor(readonly el: HTMLElement, game: Game, trailing?: HTMLElement | null) {
     el.innerHTML = `
       <div class="hud-row">
         <div class="stat"><span class="label">${t('hud.score')}</span><b class="score">0</b></div>
@@ -23,9 +24,10 @@ export class Hud {
         <div class="stat combo-stat"><span class="label">${t('hud.combo')}</span><b class="combo">0</b><i class="mult">x1</i></div>
       </div>
       <div class="timebar"><span></span></div>
-      <div class="gauge" title="${t('hud.feverTip', { n: FEVER_COMBO })}"><span></span><em>FEVER</em></div>
+      <div class="gauge" title="${t('hud.feverTip', { n: FEVER_COMBO })}"><span></span><em>${t('hud.fever')}</em></div>
       <p class="mission">${ICONS.target} ${t(`mission.${game.mission.id}`)} <b></b></p>`;
     const q = (s: string) => el.querySelector<HTMLElement>(s)!;
+    if (trailing) q('.hud-row').append(trailing);
     this.score = q('.score');
     this.time = q('.time');
     this.timebar = q('.timebar span');

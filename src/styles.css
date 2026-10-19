@@ -1,3 +1,20 @@
+/* 글꼴: 여기어때 잘난체 2(제목·버튼·숫자) + 잘난체 고딕(본문). 상업적 사용 무료, 출처는 fonts/LICENSE-Jalnan.txt.
+ * 한 가지 굵기뿐이라 모든 굵기에 같은 파일을 쓰고, 가짜 굵게(font-synthesis)는 끈다.
+ * 글자가 바뀌며 깜빡이지 않도록 잠깐(최대 3초) 기다렸다 보여 준다 */
+@font-face {
+  font-family: 'Jalnan 2';
+  src: url('./fonts/Jalnan2.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Jalnan Gothic';
+  src: url('./fonts/JalnanGothic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: block;
+}
+
 :root {
   --bg-base: #f4efe6;
   --bg: color-mix(in srgb, var(--bg-base) 88%, var(--skin-tint));
@@ -25,7 +42,9 @@
   --stage-shade: transparent;
   --dirt-dim: 1;
   color-scheme: light;
-  font-family: 'Jua', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-body: 'Jalnan Gothic', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-display: 'Jalnan 2', var(--font-body);
+  font-family: var(--font-body);
   font-synthesis-weight: none;
   letter-spacing: 0.01em;
 }
@@ -71,6 +90,7 @@
   --dirt-dark: #5b3a22;
   --pit: #2a1a10;
   --accent: #ff7a3d;
+  --daily: #3f8fe0;
   --sky-top-day: #8fd0ff;
   --sky-bottom-day: #e6f6ff;
   --sky-top-night: #0b1430;
@@ -90,6 +110,7 @@
   --dirt-dark: #7c4a22;
   --pit: #3a2412;
   --accent: #d9622b;
+  --daily: #239b8c;
   --sky-top-day: #ffbe73;
   --sky-bottom-day: #fff0d4;
   --sky-top-night: #1c1030;
@@ -109,6 +130,7 @@
   --dirt-dark: #3f2a16;
   --pit: #1a120a;
   --accent: #e2557a;
+  --daily: #3c9a48;
   --sky-top-day: #86cfa9;
   --sky-bottom-day: #def4e5;
   --sky-top-night: #04130d;
@@ -128,6 +150,7 @@
   --dirt-dark: #56667b;
   --pit: #1f2b3b;
   --accent: #3b82d6;
+  --daily: #7b63d8;
   --sky-top-day: #a6cbee;
   --sky-bottom-day: #f1f7fc;
   --sky-top-night: #0a1630;
@@ -242,6 +265,15 @@ p {
   margin: 0;
 }
 
+/* 한글은 낱말 중간에서 끊지 않고, 여러 줄이면 줄 길이를 고르게 맞춰 한 글자만 남는 줄을 막는다 */
+h1,
+h2,
+h3,
+p {
+  word-break: keep-all;
+  text-wrap: balance;
+}
+
 .btn,
 .chip,
 .pause-btn {
@@ -287,6 +319,102 @@ p {
 .btn.ghost {
   background: transparent;
   box-shadow: none;
+}
+
+/* 오늘의 챌린지: 달력 배지 · 제목 · 화살표가 한 줄에 놓인 버튼. 색은 스킨마다 클래식 버튼(--accent)과 짝이 되는 --daily */
+.btn.daily {
+  --daily-dark: color-mix(in srgb, var(--daily) 62%, black);
+  flex-direction: row;
+  gap: 0.65em;
+  padding: 0.45em 0.6em 0.45em 0.5em;
+  background: var(--daily);
+  border-color: var(--daily-dark);
+  color: #fff;
+  text-align: left;
+  box-shadow: 0 0.25em 0 var(--daily-dark);
+}
+
+.btn.daily:active {
+  box-shadow: 0 0.05em 0 var(--daily-dark);
+}
+
+.daily-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.btn.daily small {
+  color: rgb(255 255 255 / 0.85);
+}
+
+.cal {
+  display: grid;
+  grid-template-rows: 0.55em 1fr;
+  width: 2.3em;
+  height: 2.4em;
+  flex: none;
+  overflow: hidden;
+  border: 2px solid var(--daily-dark);
+  border-radius: 0.45em;
+  background: #fff;
+  color: var(--daily-dark);
+  rotate: -6deg;
+  box-shadow: 0 0.12em 0 rgb(0 0 0 / 0.2);
+  transition: rotate 150ms;
+}
+
+.cal i {
+  background: #ff5b5b;
+}
+
+.cal b {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: max(18px, 1em);
+  font-weight: 400;
+}
+
+.btn.daily .go {
+  display: grid;
+  flex: none;
+  animation: nudge 1.4s ease-in-out infinite;
+}
+
+.btn.daily .go .icon {
+  width: 1.4em;
+  height: 1.4em;
+  stroke-width: 3;
+}
+
+/* 화살표가 앞으로 살짝 밀었다 돌아와 "들어가기"를 알린다 */
+@keyframes nudge {
+  50% { translate: 0.2em 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn.daily .go {
+    animation: none;
+  }
+}
+
+@media (hover: hover) {
+  .btn.daily:hover .cal {
+    rotate: 6deg;
+  }
+}
+
+/* 좁은 가로 화면에서는 재생 단추를 빼서 부제가 한 줄에 들어가게 한다 */
+@media (orientation: landscape) and (max-height: 480px) {
+  .btn.daily .go {
+    display: none;
+  }
+
+  .btn.daily small {
+    white-space: nowrap;
+  }
 }
 
 .btn:focus-visible,
@@ -367,6 +495,85 @@ p {
   0%, 15% { transform: translateY(105%); }
   30%, 60% { transform: translateY(0); }
   75%, 100% { transform: translateY(105%); }
+}
+
+.title-text .ch {
+  display: inline-block;
+}
+
+/* ---------- 오프닝: 페이지에 처음 들어왔을 때 한 번 ----------
+ * 구멍이 솟고 → 두더지가 튀어나오고 → 제목 글자가 떨어지고 → 망치가 날아와 제목을 콩! → 버튼·도감이 차례로.
+ * 단추의 눌림(transform)과 겹치지 않게 translate·scale 속성만 쓰고, 끝난 뒤에는 남지 않도록 backwards로 채운다.
+ * 건너뛰기(누르기)를 하면 .opening이 빠지며 모든 요소가 바로 제자리에 선다 */
+@media (prefers-reduced-motion: no-preference) {
+  .opening .title-hole {
+    animation: intro-pop 450ms cubic-bezier(0.3, 1.6, 0.6, 1) backwards;
+  }
+
+  .opening .title-hole .mole.bob {
+    animation:
+      intro-peek 1s 300ms ease-out backwards,
+      bob 2.4s 1.3s ease-in-out infinite;
+  }
+
+  .opening .title-text .ch {
+    animation: intro-drop 500ms calc(450ms + var(--i) * 60ms) cubic-bezier(0.3, 1.5, 0.6, 1) backwards;
+  }
+
+  .opening .title-hammer {
+    animation:
+      intro-hammer 500ms 1050ms ease-in backwards,
+      title-swing 2.4s 1.6s ease-in-out infinite;
+  }
+
+  .opening h1 {
+    animation: intro-bonk 300ms 1400ms ease-out;
+  }
+
+  .opening .tagline { animation: intro-rise 400ms 1250ms ease-out backwards; }
+  .opening .modes .btn { animation: intro-rise 450ms 1350ms cubic-bezier(0.3, 1.5, 0.6, 1) backwards; }
+  .opening .modes .btn + .btn { animation-delay: 1450ms; }
+  .opening .best { animation: intro-rise 400ms 1550ms ease-out backwards; }
+  .opening .dex { animation: intro-rise 400ms 1200ms ease-out backwards; }
+  .opening .dex h2 { animation: intro-rise 400ms 1300ms ease-out backwards; }
+  .opening .dex li { animation: intro-pop 350ms calc(1350ms + var(--i) * 50ms) cubic-bezier(0.3, 1.6, 0.6, 1) backwards; }
+  .opening .hint { animation: intro-rise 400ms 1700ms ease-out backwards; }
+  .opening .corner { animation: intro-fade 400ms 1500ms ease-out backwards; }
+}
+
+@keyframes intro-pop {
+  from { scale: 0; opacity: 0; }
+}
+
+@keyframes intro-peek {
+  0% { transform: translateY(105%); }
+  30% { transform: translateY(-14%); }
+  42%, 80% { transform: translateY(0); }
+  100% { transform: translateY(105%); }
+}
+
+@keyframes intro-drop {
+  0% { translate: 0 -1.6em; rotate: -20deg; opacity: 0; }
+  60% { translate: 0 0.08em; rotate: 4deg; opacity: 1; }
+}
+
+@keyframes intro-hammer {
+  0% { translate: 3em -3em; rotate: 140deg; opacity: 0; }
+  60% { translate: 0 0; rotate: -45deg; opacity: 1; }
+  80% { rotate: 18deg; }
+}
+
+@keyframes intro-bonk {
+  40% { scale: 1.08 0.82; }
+  70% { scale: 0.96 1.06; }
+}
+
+@keyframes intro-rise {
+  from { translate: 0 1em; opacity: 0; }
+}
+
+@keyframes intro-fade {
+  from { opacity: 0; }
 }
 
 .modes {
@@ -686,7 +893,7 @@ button.dex-item:focus-visible {
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
-  transition: box-shadow 200ms, filter 300ms;
+  transition: box-shadow 200ms;
 }
 
 @media (pointer: fine) {
@@ -890,6 +1097,32 @@ button.dex-item:focus-visible {
 
 .mole.up {
   transform: translateY(0);
+}
+
+/* 엿보기: 귀와 정수리만 구멍 위로 살짝, 구멍 그늘 속처럼 어둡게, 두리번거린다.
+ * "아직 안 나왔다"가 한눈에 보이도록 다 나온 두더지(밝고 큼)와 확실히 다르게 */
+.mole {
+  transition:
+    transform 130ms cubic-bezier(0.3, 1.4, 0.6, 1),
+    filter 120ms;
+}
+
+/* 어둡기만 하면 안 보여서, 색은 살짝만 죽이고 구멍 그늘이 머리에 드리운 듯 아래쪽을 어둡게 한다 */
+.mole.peek {
+  transform: translateY(64%);
+  filter: brightness(0.78) saturate(0.7) drop-shadow(0 -0.4cqw 0.8cqw rgb(0 0 0 / 0.35));
+  transition:
+    transform 260ms ease-out,
+    filter 120ms;
+}
+
+.mole.peek .body {
+  animation: peek-look 520ms ease-in-out infinite alternate;
+}
+
+@keyframes peek-look {
+  from { transform: translateX(-4%) rotate(-3deg); }
+  to { transform: translateX(4%) rotate(3deg); }
 }
 
 .body {
@@ -1621,8 +1854,13 @@ button.dex-item:focus-visible {
   to { opacity: 1; }
 }
 
+/* 얼음: 땅과 구멍만 얼음빛으로 바꾼다. 두더지는 제 색을 지켜야 폭탄·황금을 한눈에 가린다 */
 .frozen .stage {
-  filter: saturate(0.6) hue-rotate(160deg) brightness(1.1);
+  --grass: #d4ecfb;
+  --grass-dark: #9fcaec;
+  --dirt: #8fb6da;
+  --dirt-dark: #5a80a8;
+  --pit: #1b3150;
 }
 
 /* 얼음: 판 가장자리에 서리가 낀다 */
@@ -1971,6 +2209,12 @@ button.dex-item:focus-visible {
   padding: 1em;
   background: rgb(20 14 8 / 0.55);
   animation: fade-in 150ms ease-out;
+}
+
+/* 다시 그린 뒤 되살린 창은 등장 연출 없이 그대로 */
+.modal-backdrop.instant,
+.modal-backdrop.instant .modal {
+  animation: none;
 }
 
 .modal {
@@ -2358,11 +2602,12 @@ button.dex-item:focus-visible {
   aspect-ratio: auto;
   border-radius: 2px;
   opacity: 0.7;
-  animation-name: dust;
+  animation-name: sand-drift;
   animation-duration: calc(var(--dur) * 0.5);
 }
 
-@keyframes dust {
+/* 헛친 자리의 흙먼지(dust)와 이름이 겹치면 그 먼지가 오른쪽으로 날아가 버리므로 따로 이름 짓는다 */
+@keyframes sand-drift {
   from { transform: translateX(-10vw); }
   to { transform: translateX(110vw) translateY(-4vh); }
 }
@@ -2768,14 +3013,21 @@ small {
 
 /* ---------- 제목 글꼴 · 설정 위계 · 구멍 윤기 ---------- */
 
-/* 굵은 제목 글꼴(Black Han Sans)로 본문(Jua)과 위계를 나눈다 */
+/* 통통한 제목 글꼴(잘난체 2)로 본문(잘난체 고딕)과 위계를 나눈다. 버튼·점수 숫자도 게임 글꼴로 */
 .start h1,
 .modal h2,
 .grade,
 .countdown,
-.banner {
-  font-family: 'Black Han Sans', 'Jua', system-ui, sans-serif;
+.banner,
+.btn,
+.stat b,
+.popup {
+  font-family: var(--font-display);
   font-weight: 400;
+}
+
+.btn small {
+  font-family: var(--font-body);
 }
 
 .modal h2 {
@@ -2896,4 +3148,859 @@ small {
   .modal h2 {
     font-size: max(22px, 1.3em);
   }
+}
+
+/* ---------- 숨 쉴 틈: 요소·글자 사이 상하 간격 · 두 줄 도감 · 일시정지 버튼 정렬 ---------- */
+
+body {
+  line-height: 1.4;
+}
+
+.screen {
+  gap: 0.9em;
+}
+
+.col {
+  gap: 0.9em;
+}
+
+.start h1 {
+  line-height: 1.2;
+}
+
+.tagline {
+  margin-top: -0.2em;
+  line-height: 1.45;
+}
+
+.modes {
+  gap: 0.75em;
+}
+
+.best,
+.hint {
+  padding: 0.2em 0.7em;
+}
+
+/* 도감: 한 줄 8칸은 두더지가 너무 작아 4칸 × 2줄로 */
+.dex {
+  padding: 0.8em 0.8em 0.9em;
+}
+
+.dex h2 {
+  margin-bottom: 0.7em;
+}
+
+.dex ul {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.55em;
+}
+
+.dex-item {
+  padding: 0.45em 0.2em;
+}
+
+.dex-item .thumb {
+  width: min(100%, 3.6em);
+}
+
+/* 게임 HUD: 일시정지 버튼은 점수·시간·콤보 줄의 네 번째 칸으로, 같은 높이·같은 모양 */
+.game {
+  --top-h: 9.4em;
+}
+
+.hud {
+  gap: 0.6em;
+}
+
+.hud-row {
+  grid-template-columns: repeat(3, 1fr) 3.2em;
+  gap: 0.5em;
+  padding-right: 0;
+}
+
+.stat {
+  padding: 0.35em 0.5em 0.4em;
+  gap: 0.1em;
+  box-shadow: 0 0.2em 0 var(--border);
+}
+
+.stat .label {
+  line-height: 1.3;
+}
+
+.hud-row .pause-btn {
+  position: static;
+  width: auto;
+  height: auto;
+  align-self: stretch;
+  margin: 0;
+  border-radius: 0.75em;
+  box-shadow: 0 0.2em 0 var(--border);
+}
+
+.hud-row .pause-btn:active {
+  transform: translateY(0.15em);
+  box-shadow: 0 0.05em 0 var(--border);
+}
+
+.mission {
+  line-height: 1.4;
+}
+
+@media (orientation: landscape) {
+  .game {
+    gap: 1.4em;
+  }
+
+  .hud-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-row .pause-btn {
+    height: 2.6em;
+    margin-top: 0.2em;
+  }
+}
+
+/* 낮은 화면: 간격을 조금 줄여 한 화면에 들어가게 한다 */
+@media (orientation: portrait) and (max-height: 719px),
+  (orientation: landscape) and (max-height: 404px) {
+  .screen,
+  .col {
+    gap: 0.6em;
+  }
+
+  .game {
+    --top-h: 8.6em;
+  }
+
+  .dex {
+    padding: 0.6em;
+  }
+
+  .dex h2 {
+    margin-bottom: 0.45em;
+  }
+
+  .dex ul {
+    gap: 0.4em;
+  }
+}
+
+/* 아주 낮은 세로 화면(예: 320×568, 360×640): 두 줄 도감까지 한 화면에 들도록 제목 구멍·도감 칸을 줄이고 소개 문구를 뺀다 */
+@media (orientation: portrait) and (max-height: 719px) {
+  .start .title-hole {
+    width: 4.4em;
+  }
+
+  .dex-item .thumb {
+    width: min(100%, 2.7em);
+  }
+
+  .dex-item {
+    padding: 0.3em 0.15em;
+  }
+}
+
+@media (orientation: portrait) and (max-height: 660px) {
+  .start .tagline {
+    display: none;
+  }
+}
+
+/* 일시정지 아이콘을 칸 크기에 맞게 키운다 */
+.hud-row .pause-btn .icon {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+/* 낮은 가로 화면(예: 568×320): 세로로 쌓인 HUD가 넘치지 않게 간격을 처음 수준으로 */
+@media (orientation: landscape) and (max-height: 404px) {
+  .hud {
+    gap: 0.35em;
+  }
+
+  .hud-row {
+    gap: 0.3em;
+  }
+
+  .stat {
+    padding: 0.1em 0.45em;
+    gap: 0;
+  }
+
+  .hud-row .pause-btn {
+    height: 2.2em;
+    margin-top: 0;
+  }
+
+  .mission {
+    line-height: 1.2;
+  }
+}
+
+/* ---------- 설정 창: 가로 2단에서 오른쪽이 잘리지 않게 ----------
+ * 1fr은 내용보다 좁아지지 못해, 줄바꿈 없는 버튼이 오른쪽 칸을 창 밖으로 밀어냈다.
+ * 칸은 minmax(0, 1fr)로 똑같이 나눈다 */
+.settings-grid > section {
+  min-width: 0;
+}
+
+/* 소리·진동은 언제나 한 줄에 둘 */
+.settings .toggles {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings .chip {
+  min-width: 0;
+}
+
+@media (orientation: landscape) {
+  .settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (orientation: landscape) and (max-height: 404px),
+  (orientation: landscape) and (max-width: 719px) {
+  .settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 넓은 가로 화면: 창을 넓혀 오른쪽 칸도 채운다.
+ * 컬러 모드 | 언어 / 스킨(두 줄 높이) | 소리·진동, 게임 리셋 */
+@media (orientation: landscape) and (min-height: 405px) and (min-width: 720px) {
+  .modal:has(.settings) {
+    width: min(100%, 44em);
+  }
+
+  .settings-grid {
+    grid-template-areas:
+      'theme lang'
+      'skin toggles'
+      'skin reset';
+    align-items: start;
+  }
+
+  .settings-grid > section:first-child { grid-area: theme; }
+  .settings-grid > section:nth-child(2) { grid-area: lang; }
+  .settings-grid > .skin-section { grid-area: skin; }
+  .settings-grid > .toggle-section { grid-area: toggles; }
+  .settings-grid > .reset-section { grid-area: reset; }
+}
+
+/* 낮은 가로 화면: 마지막 줄(소리·진동)이 바닥에 걸리지 않게 간격을 조금 줄인다 */
+@media (orientation: landscape) and (max-height: 404px) {
+  .modal:has(.settings) {
+    padding: 0.6em 0.8em;
+  }
+
+  .settings,
+  .settings-grid {
+    gap: 0.4em;
+  }
+
+  .settings h3 {
+    margin-bottom: 0.2em;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 480px) {
+  /* 영어 설명은 길어 낮은 가로 화면에서 리셋 버튼을 밀어낸다. 낮은 화면에서처럼 설명은 뺀다 */
+  .reset-section .note:not(.done) {
+    display: none;
+  }
+}
+
+/* ---------- 가볍고 산뜻하게: 반투명 면 · 얇은 선 · 부드러운 그림자 · 넉넉한 여백 ----------
+ * 배경 그림이 비쳐 보이도록 패널은 반쯤 투명하게, 테두리는 얇고 옅게 한다.
+ * 움직이는 배경 위라 매 프레임 다시 그려야 하는 backdrop-filter(흐림)는 쓰지 않는다.
+ * 읽어야 할 글이 많은 설정·도감 창은 그대로 불투명하게 둔다 */
+:root {
+  --glass: color-mix(in srgb, var(--surface) 66%, transparent);
+  --glass-soft: color-mix(in srgb, var(--surface) 42%, transparent);
+  --line: color-mix(in srgb, var(--border) 55%, transparent);
+  --soft-shadow: 0 0.3em 1.1em rgb(40 25 10 / 0.08);
+}
+
+.dex,
+.stat,
+.hud-row .pause-btn,
+.corner.icon-btn,
+.corner.lang-btn {
+  background: var(--glass);
+  border: 1.5px solid var(--line);
+  box-shadow: var(--soft-shadow);
+}
+
+.hud-row .pause-btn:active {
+  box-shadow: none;
+}
+
+.best,
+.hint {
+  background: var(--glass-soft);
+}
+
+.timebar,
+.gauge {
+  background: color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.gauge em {
+  opacity: 0.45;
+}
+
+/* 도감: 칸은 테두리 없이 옅은 바탕만, 못 만난 두더지는 더 흐리게 */
+.dex h2 {
+  color: var(--muted);
+}
+
+.dex-item {
+  background: var(--glass-soft);
+}
+
+.dex-item.locked {
+  opacity: 0.4;
+}
+
+/* 시작 화면: 버튼 폭을 줄이고 요소 사이를 넓혀 숨 쉴 자리를 만든다 */
+.start .modes {
+  width: min(100%, 17.5em);
+  margin-inline: auto;
+}
+
+.start .side-col {
+  max-width: 21em;
+  margin-inline: auto;
+}
+
+@media (orientation: portrait) and (min-height: 720px) {
+  .start {
+    justify-content: space-around;
+  }
+
+  .start .main-col {
+    gap: 1.2em;
+  }
+
+  .start .tagline {
+    margin-top: -0.6em;
+  }
+}
+
+/* 도감은 실루엣이 배경 그림에 묻히지 않게 조금 더 불투명하게 */
+.dex {
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+}
+
+.dex-item {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+.dex-item.locked {
+  opacity: 0.5;
+}
+
+/* ---------- HUD 칸 안쪽 간격 · 읽기 쉬운 FEVER ---------- */
+
+.stat {
+  padding: 0.5em 0.6em 0.55em;
+  gap: 0.3em;
+  align-content: center;
+}
+
+.stat .label {
+  line-height: 1.15;
+}
+
+.stat b {
+  line-height: 1.05;
+}
+
+/* 콤보 배율은 이름표 옆이 아니라 숫자 줄 오른쪽 아래에 */
+.mult {
+  top: auto;
+  bottom: 0.55em;
+  right: 0.55em;
+  line-height: 1;
+}
+
+/* FEVER: 게이지가 비었을 때도 찼을 때도 읽히도록 흰 글자에 어두운 테두리 */
+.gauge {
+  height: max(28px, 1.05em);
+}
+
+.gauge em {
+  font-family: var(--font-display);
+  font-size: max(18px, 0.75em);
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  color: #fff;
+  opacity: 1;
+  text-shadow:
+    0 0 0.12em rgb(60 30 10 / 0.9),
+    0 0.08em 0.15em rgb(60 30 10 / 0.7);
+  -webkit-text-stroke: 0.5px rgb(60 30 10 / 0.55);
+}
+
+.fever .gauge em {
+  animation: fever-text 600ms ease-in-out infinite;
+}
+
+@keyframes fever-text {
+  50% { scale: 1.08; }
+}
+
+.game {
+  --top-h: 10.4em;
+}
+
+@media (orientation: portrait) and (max-height: 719px) {
+  .game {
+    --top-h: 9.6em;
+  }
+}
+
+@media (orientation: landscape) {
+  .stat {
+    padding: 0.35em 0.6em;
+  }
+
+  .mult {
+    position: static;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 404px) {
+  .stat {
+    padding: 0.15em 0.5em;
+    gap: 0.1em;
+  }
+
+  .gauge {
+    height: max(24px, 0.9em);
+  }
+}
+
+/* 콤보 칸: 숫자는 가운데, 배율은 숫자 바로 오른쪽 같은 줄에. 다른 칸과 높이가 같다 */
+.combo-stat {
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: 0.25em;
+}
+
+.combo-stat .label {
+  grid-column: 1 / -1;
+}
+
+.combo-stat b {
+  grid-column: 2;
+}
+
+.combo-stat .mult {
+  position: static;
+  grid-column: 3;
+  justify-self: start;
+  align-self: end;
+  margin-bottom: 0.15em;
+}
+
+@media (orientation: landscape) {
+  .combo-stat {
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .combo-stat .label {
+    grid-column: 1;
+  }
+
+  .combo-stat .mult {
+    grid-column: 3;
+    align-self: baseline;
+    margin: 0;
+  }
+}
+
+/* ---------- 도감 설명 창: 여백 ----------
+ * 구멍 그림 · 이름 · 숫자 세 칸 · 설명 · 잡은 수가 붙어 있지 않게 간격을 벌리고,
+ * 숫자 칸은 이름표와 값 사이도 띄운다. 설명은 넓은 줄 간격으로 가운데에 */
+.modal:has(.dex-detail) {
+  width: min(100%, 23em);
+  padding: 1.4em 1.4em 1.5em;
+}
+
+.dex-detail {
+  gap: 1em;
+}
+
+.dex-detail h2 {
+  margin-top: 0.3em;
+  font-size: max(22px, 1.45em);
+  line-height: 1.2;
+}
+
+.detail-hole {
+  width: 7.5em;
+  margin: 0 auto -0.6em;
+}
+
+.detail-stats {
+  gap: 0.55em;
+}
+
+.detail-stats div {
+  display: grid;
+  gap: 0.3em;
+  padding: 0.65em 0.3em 0.7em;
+  border-radius: 0.8em;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  border: 1.5px solid var(--line);
+}
+
+.detail-stats dt {
+  font-size: max(18px, 0.72em);
+  line-height: 1.2;
+}
+
+.detail-stats dd {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: max(20px, 1.1em);
+  line-height: 1.15;
+}
+
+.detail-desc {
+  padding: 0.2em 0.3em;
+  font-size: max(18px, 0.9em);
+  line-height: 1.65;
+  text-align: center;
+}
+
+.detail-count {
+  padding-top: 0.8em;
+  border-top: 1.5px dashed var(--line);
+  font-size: max(18px, 0.8em);
+  line-height: 1.4;
+}
+
+@media (orientation: landscape) {
+  .modal:has(.dex-detail) {
+    width: min(100%, 34em);
+    padding: 1.2em 1.5em;
+  }
+
+  .dex-detail {
+    grid-template-columns: 8em 1fr;
+    column-gap: 1.6em;
+    row-gap: 0.8em;
+  }
+
+  .dex-detail h2 {
+    margin-top: 0;
+  }
+
+  .detail-hole {
+    width: 8em;
+    margin: 0;
+  }
+
+  .detail-desc {
+    padding: 0;
+    text-align: left;
+  }
+}
+
+/* 낮은 화면: 한 화면에 들도록 간격만 조금 줄인다 */
+@media (orientation: portrait) and (max-height: 719px),
+  (orientation: landscape) and (max-height: 404px) {
+  .modal:has(.dex-detail) {
+    padding: 1em 1.1em 1.1em;
+  }
+
+  .dex-detail {
+    gap: 0.7em;
+  }
+
+  .detail-hole {
+    width: 6em;
+  }
+
+  .detail-desc {
+    line-height: 1.5;
+  }
+
+  .detail-count {
+    padding-top: 0.55em;
+  }
+}
+
+@media (orientation: landscape) {
+  /* 가로 2단: 이름은 왼쪽 정렬(닫기 버튼 자리는 비움), 숫자 칸은 가운데 정렬 */
+  .dex-detail h2 {
+    justify-content: flex-start;
+    padding-right: 2.4em;
+    text-align: left;
+  }
+
+  .detail-stats div {
+    text-align: center;
+  }
+}
+
+/* ---------- 도감 넘기기: 아래 줄의 ‹ 1 / 6 › 와 좌우 슬라이드 ---------- */
+.dex-browser {
+  display: grid;
+  gap: 0.9em;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dex-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+}
+
+.dex-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.6em;
+  height: 2.6em;
+  flex: none;
+  padding: 0;
+  border: 1.5px solid var(--line);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 0.15em 0 var(--line);
+  transition: transform 80ms, background 120ms;
+}
+
+.dex-arrow .icon {
+  width: 1.3em;
+  height: 1.3em;
+  stroke-width: 2.6;
+}
+
+.dex-arrow:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+}
+
+.dex-arrow:active {
+  transform: scale(0.9);
+}
+
+.dex-arrow:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dex-pager {
+  font-size: max(18px, 0.85em);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dex-detail.from-right {
+  animation: dex-in-right 220ms ease-out;
+}
+
+.dex-detail.from-left {
+  animation: dex-in-left 220ms ease-out;
+}
+
+@keyframes dex-in-right {
+  from { translate: 2.5em 0; opacity: 0; }
+}
+
+@keyframes dex-in-left {
+  from { translate: -2.5em 0; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dex-detail.from-right,
+  .dex-detail.from-left {
+    animation: none;
+  }
+}
+
+/* 가로 2단: 넘기기 줄은 왼쪽 그림 칸 아래(그림 밑 빈자리)에 둬 창 높이를 늘리지 않는다 */
+@media (orientation: landscape) {
+  /* 닫기 버튼과 같이 창(.modal) 기준으로 놓는다. 위치는 창 안쪽 여백에 맞춘다 */
+  .dex-detail .detail-hole {
+    align-self: start;
+  }
+
+  .dex-nav {
+    position: absolute;
+    left: 1.5em;
+    bottom: 1.2em;
+    width: 8em;
+    gap: 0.3em;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 404px) {
+  .dex-nav {
+    left: 1.1em;
+    bottom: 1.1em;
+  }
+}
+
+.dex-pager {
+  white-space: nowrap;
+}
+
+@media (orientation: portrait) and (max-height: 719px),
+  (orientation: landscape) and (max-height: 404px) {
+  .dex-browser {
+    gap: 0.55em;
+  }
+
+  .dex-arrow {
+    width: 2.3em;
+    height: 2.3em;
+  }
+}
+
+/* ---------- 두리번: 나와 있는 동안 고개를 좌우로 돌리며 눈동자도 같은 쪽을 본다 ----------
+ * 올라오고 내려가는 움직임(transform)과 겹치지 않게 rotate·translate 속성만 쓴다.
+ * 판 위 두더지는 잠깐만 나와 있으니 주기를 짧게, 저마다 다른 순간부터(--look-delay) 시작해 함께 움직이지 않게 한다.
+ * 모두가 두리번거리면 단조로워서, 나올 때 뽑힌 두더지(.looky, board.ts)만 한다 */
+.mole.looky.up:not(.whacked):not(.tease):not(.boom):not(.ouch):not(.kind-king) {
+  animation: glance 1.6s var(--look-delay, 0s) ease-in-out infinite;
+}
+
+.mole.looky.up .eye::after {
+  animation: look 1.6s var(--look-delay, 0s) ease-in-out infinite;
+}
+
+@keyframes glance {
+  0%, 18% { rotate: 0deg; translate: 0 0; }
+  28%, 46% { rotate: -7deg; translate: -3% 0; }
+  56%, 76% { rotate: 7deg; translate: 3% 0; }
+  86%, 100% { rotate: 0deg; translate: 0 0; }
+}
+
+/* 왕은 무게 있게 천천히 */
+.mole.looky.up.kind-king:not(.whacked):not(.ouch) {
+  animation: glance 3.2s var(--look-delay, 0s) ease-in-out infinite;
+}
+
+.mole.looky.up.kind-king .eye::after {
+  animation-duration: 3.2s;
+}
+
+/* 시작 화면 두더지: 한 번 나오면 오래(약 2.4초) 머물며 두리번거리고 들어간다. 한 바퀴 4.8초 */
+.title-hole .mole.bob {
+  animation:
+    bob 4.8s ease-in-out infinite,
+    title-glance 4.8s ease-in-out infinite;
+}
+
+.title-hole .mole.bob .eye::after {
+  animation: title-look 4.8s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 12% { transform: translateY(105%); }
+  22%, 72% { transform: translateY(0); }
+  82%, 100% { transform: translateY(105%); }
+}
+
+@keyframes title-glance {
+  0%, 28% { rotate: 0deg; translate: 0 0; }
+  34%, 44% { rotate: -8deg; translate: -3% 0; }
+  52%, 62% { rotate: 8deg; translate: 3% 0; }
+  68%, 100% { rotate: 0deg; translate: 0 0; }
+}
+
+@keyframes title-look {
+  0%, 28% { transform: translateX(0); }
+  34%, 44% { transform: translateX(-32%); }
+  52%, 62% { transform: translateX(32%); }
+  68%, 100% { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .opening .title-hole .mole.bob {
+    animation:
+      intro-peek 1s 300ms ease-out backwards,
+      bob 4.8s 1.3s ease-in-out infinite,
+      title-glance 4.8s 1.3s ease-in-out infinite;
+  }
+
+  .opening .title-hole .mole.bob .eye::after {
+    animation-delay: 1.3s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mole.up.up.up.up.up.up,
+  .mole.up .eye::after,
+  .title-hole .mole.bob,
+  .title-hole .mole.bob .eye::after {
+    animation: none;
+  }
+}
+
+/* 도감 칸의 작은 초상은 가만히 둔다(여러 마리가 한꺼번에 두리번거리면 어지럽다) */
+.thumb .mole.up.up.up.up.up.up {
+  animation: none;
+}
+
+/* 도감 넘기기: 창 높이를 가장 긴 두더지 설명에 맞춰 고정(screens.ts가 재서 min-height로 준다).
+ * 남는 자리는 설명 아래로 가고, 넘기기 줄은 늘 맨 아래 같은 자리에 */
+.dex-browser {
+  grid-template-rows: 1fr auto;
+}
+
+.dex-browser .dex-detail {
+  align-content: start;
+}
+
+/* 도감 넘기기: 만난 두더지 설명을 모두 한 칸에 겹쳐 두고 지금 것만 보인다.
+ * 창 높이가 늘 가장 긴 설명에 맞춰지므로 넘기기 버튼이 그대로 제자리에 있다 */
+.dex-stack {
+  display: grid;
+}
+
+.dex-stack > .dex-detail {
+  grid-area: 1 / 1;
+}
+
+.dex-stack > .dex-detail:not(.current) {
+  visibility: hidden;
+}
+
+.dex-stack > .dex-detail:not(.current) .mole {
+  animation: none;
+}
+
+/* 시작 화면: 두더지 구멍과 "두더지잡기" 제목 사이를 넉넉히 */
+.start .title-hole {
+  margin-bottom: 0.7em;
+}
+
+@media (orientation: portrait) and (max-height: 719px) {
+  .start .title-hole {
+    width: 3.8em;
+    margin-bottom: 0;
+  }
+}
+
+/* 도감 넘기기: 닫기 버튼은 창에 하나만(설명마다 든 것은 숨긴다). 넘길 때 함께 움직이지 않는다 */
+.dex-stack .modal-x {
+  display: none;
+}
+
+/* 한국어 게이지 글자(점수 2배)는 영문 FEVER처럼 넓게 벌리지 않는다 */
+.gauge em:lang(ko) {
+  letter-spacing: 0.04em;
 }

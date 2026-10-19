@@ -17,6 +17,12 @@ export interface Mole {
   hideAt: number;
   /** 날쌘 두더지가 이미 한 번 옮겨 갔는지 */
   jumped: boolean;
+  /** 0보다 크면 이 시각까지 머리만 살짝 내민 채 엿본다. 그동안은 아직 안 나온 것이라 칠 수 없다 */
+  peekUntil: number;
+  /** 엿보다가 나오지 않고 도로 들어가는 속임수인지 */
+  fake: boolean;
+  /** 엿보다 올라오는 중이면 이 시각에 다 올라온다. 그 전에는 아직 칠 수 없다 */
+  readyAt: number;
 }
 
 export interface Stats {
@@ -52,6 +58,10 @@ export type GameEvent =
   | { type: 'start' }
   | { type: 'segment'; index: number; id: SegmentId }
   | { type: 'spawn'; mole: Mole }
+  /** 엿보던 두더지가 다 올라왔다 */
+  | { type: 'emerge'; mole: Mole }
+  /** 엿보던 두더지가 나오지 않고 도로 들어갔다(속임수) */
+  | { type: 'duck'; mole: Mole }
   | { type: 'jump'; mole: Mole; from: number }
   | { type: 'escape'; mole: Mole }
   | { type: 'damage'; mole: Mole }

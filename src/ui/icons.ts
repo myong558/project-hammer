@@ -27,6 +27,7 @@ export const ICONS = {
   target: ui('<circle class="fill" cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
   lock: ui('<rect class="fill" x="4" y="11" width="16" height="10" rx="2.5"/><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
   check: ui('<path d="M20 6 9 17l-5-5"/>'),
+  arrow: ui('<path d="M4.5 12h14M12.5 5.5 19 12l-6.5 6.5"/>'),
   sparkle: ui('<path class="fill" d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/><path d="M19 17v4M17 19h4"/>'),
 };
 
@@ -39,6 +40,8 @@ export const THEME_ICONS: Record<Theme, string> = {
 
 export const MORE_ICONS = {
   close: ui('<path d="M18 6 6 18M6 6l12 12"/>'),
+  chevronLeft: ui('<path d="m15 5-7 7 7 7"/>'),
+  chevronRight: ui('<path d="m9 5 7 7-7 7"/>'),
   share: ui('<circle class="fill" cx="18" cy="5" r="3"/><circle class="fill" cx="6" cy="12" r="3"/><circle class="fill" cx="18" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>'),
   home: ui('<path class="fill" d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
 };

@@ -27,6 +27,17 @@ const TIME_BONUS = 3_000;
 const MAX_CLOCKS = 2;
 /** 황금 두더지가 이만큼 연달아 안 나오면 다음은 반드시 황금 */
 export const GOLDEN_PITY = 10;
+/** 엿보기는 이만큼 진행된 뒤부터(워밍업 중반). 첫 두더지들은 곧장 나와 리듬을 익히게 한다 */
+export const PEEK_FROM = 2_000;
+/** 머리만 내밀고 엿보는 시간(ms) 범위 */
+export const PEEK_MIN = 450;
+export const PEEK_MAX = 700;
+/** 엿보던 두더지가 다 올라오는 데 걸리는 시간(ms). 화면의 올라오는 연출(.mole transition 130ms)보다 조금 길게 */
+export const EMERGE_RISE = 150;
+/** 엿보던 두더지가 나오지 않고 도로 들어갈 확률 */
+export const FAKE_CHANCE = 0.4;
+/** 속임수로 들어가도 되는 두더지. 보상(황금·시계·얼음)은 엿봤으면 반드시 나온다 */
+const FAKEABLE: readonly MoleKind[] = ['normal', 'bomb', 'helmet', 'swift'];
 /** 확정 등장 사이에 끼는 최소 두더지 수. 새 얼굴이 한꺼번에 몰려나오지 않게 한다 */
 export const DEBUT_GAP = 3;
 const SLOW_DURATION = 2_000;
@@ -161,7 +172,11 @@ export class Game {
     }
 
     for (const mole of [...this.moles]) {
-      if (this.time >= mole.hideAt) this.expire(mole);
+      if (mole.peekUntil > 0) {
+        if (this.time >= mole.peekUntil) this.endPeek(mole);
+      } else if (this.time >= mole.hideAt) {
+        this.expire(mole);
+      }
     }
 
     if (this.remaining <= 0) {
@@ -177,7 +192,8 @@ export class Game {
     if (this.phase !== 'playing' || this.stunned) return;
     this.stats.taps++;
 
-    const mole = this.moles.find((m) => m.hole === hole);
+    // 머리만 내민 두더지는 아직 안 나온 것이라 빈 구멍을 친 것과 같다. 다 올라오기 전(올라오는 중)도 마찬가지
+    const mole = this.moles.find((m) => m.hole === hole && m.peekUntil === 0 && m.readyAt <= this.time);
     if (!mole) {
       this.stats.whiffs++;
       this.stunUntil = this.time + WHIFF_STUN;
@@ -218,8 +234,8 @@ export class Game {
   }
 
   /** 지정한 구멍에 두더지를 바로 내보낸다. 테스트·디버그용 */
-  place(kind: MoleKind, hole: number): Mole | null {
-    return this.spawn(kind, hole);
+  place(kind: MoleKind, hole: number, opts: { peek?: number; fake?: boolean } = {}): Mole | null {
+    return this.spawn(kind, hole, opts.peek ?? 0, opts.fake ?? false);
   }
 
   private segment(): Segment {
@@ -255,7 +271,10 @@ export class Game {
       this.segSpawns = 0;
     }
     const kind = this.chooseKind(seg);
-    if (!this.spawn(kind)) return;
+    // 이번 판에 처음 나오는 두더지는 엿보지 않고 바로 나와 확실하게 보여 준다
+    const peek = this.seen.has(kind) && this.progress >= PEEK_FROM && seg.peek > 0 && this.rng() > 1 - seg.peek;
+    const fake = peek && FAKEABLE.includes(kind) && this.rng() > 1 - FAKE_CHANCE;
+    if (!this.spawn(kind, undefined, peek ? PEEK_MIN + this.rng() * (PEEK_MAX - PEEK_MIN) : 0, fake)) return;
     this.segSpawns++;
     this.sinceDebut++;
     this.sinceGolden = kind === 'golden' ? 0 : this.sinceGolden + 1;
@@ -279,22 +298,41 @@ export class Game {
     return pickKind(seg.weights, this.rng, exclude);
   }
 
-  private spawn(kind: MoleKind, hole?: number): Mole | null {
+  /** peek(ms)만큼 머리만 내밀고 엿본 뒤 나온다. fake면 엿보기만 하고 도로 들어간다 */
+  private spawn(kind: MoleKind, hole?: number, peek = 0, fake = false): Mole | null {
     const target = hole ?? pickOne(this.freeHoles(), this.rng);
     if (target === undefined || this.moles.some((m) => m.hole === target)) return null;
+    const peekUntil = peek > 0 ? this.time + peek : 0;
     const mole: Mole = {
       id: this.nextId++,
       kind,
       hole: target,
       hp: MOLES[kind].hp,
-      hideAt: this.time + this.exposureFor(kind),
+      hideAt: (peekUntil || this.time) + this.exposureFor(kind),
       jumped: false,
+      peekUntil,
+      fake: peek > 0 && fake,
+      readyAt: 0,
     };
-    if (kind === 'clock') this.clocks++;
+    if (kind === 'clock' && !mole.fake) this.clocks++;
     this.seen.add(kind);
     this.moles.push(mole);
     this.emit({ type: 'spawn', mole });
     return mole;
+  }
+
+  /** 엿보기가 끝났다: 속임수면 도로 들어가고, 아니면 다 올라온다 */
+  private endPeek(mole: Mole): void {
+    if (mole.fake) {
+      this.remove(mole);
+      this.emit({ type: 'duck', mole });
+      return;
+    }
+    mole.peekUntil = 0;
+    // 다 올라올 때까지는 칠 수 없으니 그만큼 노출 시간을 뒤로 민다
+    mole.readyAt = this.time + EMERGE_RISE;
+    mole.hideAt += EMERGE_RISE;
+    this.emit({ type: 'emerge', mole });
   }
 
   private expire(mole: Mole): void {
@@ -340,7 +378,10 @@ export class Game {
       this.emit({ type: 'timeBonus', ms: TIME_BONUS });
     } else if (mole.kind === 'ice') {
       this.slowUntil = this.time + SLOW_DURATION;
-      for (const m of this.moles) m.hideAt += FREEZE_EXTEND;
+      for (const m of this.moles) {
+        m.hideAt += FREEZE_EXTEND;
+        if (m.peekUntil > 0) m.peekUntil += FREEZE_EXTEND;
+      }
       this.emit({ type: 'freeze' });
     }
   }

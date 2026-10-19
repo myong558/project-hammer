@@ -4,6 +4,9 @@ import type { Mole, MoleKind } from '../game/types';
 import { moleName, t } from '../i18n';
 import { ACCESSORY_ART, DIZZY, holeArt } from './icons';
 
+/** 판 위 두더지 중 나와 있는 동안 두리번거리는 몫 */
+const LOOKY_CHANCE = 0.4;
+
 /** 구멍 하나의 그림: 뒤(둔덕·구멍 속) · 두더지 자리 · 앞 테두리 */
 export function holeInner(seed = 0): string {
   const { back, front } = holeArt(seed);
@@ -53,10 +56,32 @@ export class Board {
 
   spawn(mole: Mole): void {
     const el = createMoleEl(mole.kind);
+    // 열에 넷 정도만 나와 있는 동안 좌우로 두리번거린다. 두더지마다 다른 순간에서 시작하게
+    if (Math.random() < LOOKY_CHANCE) el.classList.add('looky');
+    el.style.setProperty('--look-delay', `${(-Math.random() * 1.6).toFixed(2)}s`);
     this.moleEls.set(mole.id, el);
     this.slot(mole.hole).append(el);
+    // 엿보는 두더지는 머리만 그늘 속에 살짝 내민다. 아직 칠 수 없으니 구멍 이름표도 비워 둔다
+    const peek = mole.peekUntil > 0;
+    if (!peek) this.label(mole.hole, mole.kind);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add(peek ? 'peek' : 'up')));
+  }
+
+  /** 엿보던 두더지가 쑥 올라온다 */
+  emerge(mole: Mole): void {
+    const el = this.moleEls.get(mole.id);
+    if (!el) return;
+    el.classList.remove('peek');
+    el.classList.add('up');
     this.label(mole.hole, mole.kind);
-    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('up')));
+  }
+
+  /** 엿보던 두더지가 나오지 않고 도로 쏙 들어간다 */
+  duck(mole: Mole): void {
+    const el = this.take(mole);
+    if (!el) return;
+    el.classList.remove('peek');
+    setTimeout(() => el.remove(), 200);
   }
 
   jump(mole: Mole, from: number): void {
