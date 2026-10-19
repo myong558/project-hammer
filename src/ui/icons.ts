@@ -167,53 +167,182 @@ export const DECO_ART: Record<Skin, [string, string]> = {
 
 /* ---------- 구멍: 뒤(둔덕·구멍 속)와 앞(앞 테두리) ---------- */
 
-/** 타원 둘레를 살짝 울퉁불퉁하게: 손으로 그린 듯한 둔덕 가장자리 */
-function wobblyEllipse(cx: number, cy: number, rx: number, ry: number, rng: () => number, jitter: number): string {
-  const n = 12;
-  const pts = Array.from({ length: n }, (_, i) => {
-    const a = (i / n) * Math.PI * 2;
-    const k = 1 + (rng() - 0.5) * jitter;
-    return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k];
-  });
-  const mid = (a: number[], b: number[]) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+type Pt = [number, number];
+const f1 = (n: number) => n.toFixed(1);
+
+/** 점들을 이어 부드러운 닫힌 곡선으로: 꼭짓점을 조절점으로, 변의 가운데를 지나간다 */
+function smoothClosed(pts: Pt[]): string {
+  const n = pts.length;
+  const mid = (a: Pt, b: Pt): Pt => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
   const start = mid(pts[n - 1], pts[0]);
-  let d = `M${start[0].toFixed(1)} ${start[1].toFixed(1)}`;
+  let d = `M${f1(start[0])} ${f1(start[1])}`;
   for (let i = 0; i < n; i++) {
     const m = mid(pts[i], pts[(i + 1) % n]);
-    d += ` Q${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)} ${m[0].toFixed(1)} ${m[1].toFixed(1)}`;
+    d += `Q${f1(pts[i][0])} ${f1(pts[i][1])} ${f1(m[0])} ${f1(m[1])}`;
   }
   return d + 'Z';
 }
 
+/** 타원 둘레를 울퉁불퉁하게: 손으로 그린 듯한 둔덕·바위·흙덩이 가장자리 */
+function wobblyEllipse(cx: number, cy: number, rx: number, ry: number, rng: () => number, jitter: number, n = 12): string {
+  const phase = rng() * Math.PI * 2;
+  return smoothClosed(
+    Array.from({ length: n }, (_, i): Pt => {
+      const a = phase + (i / n) * Math.PI * 2;
+      const k = 1 + (rng() - 0.5) * jitter;
+      return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k];
+    }),
+  );
+}
+
+/** 앞 테두리: 안쪽은 구멍 입구 타원, 바깥쪽은 구멍마다 다르게 울퉁불퉁한 흙 둘레 */
+function lipPath(rng: () => number, outer: [number, number], inset: number): string {
+  const n = 9;
+  const [rx, ry] = outer;
+  const pts: Pt[] = Array.from({ length: n + 1 }, (_, i) => {
+    const a = (i / n) * Math.PI;
+    const k = i === 0 || i === n ? 1 : 1 + (rng() - 0.4) * 0.26;
+    return [50 + Math.cos(a) * rx * k, 33 - inset + Math.sin(a) * ry * k];
+  });
+  let d = `M12 30A38 14 0 0 0 88 30L${f1(pts[0][0])} ${f1(pts[0][1])}`;
+  for (let i = 1; i < n; i++) {
+    const m: Pt = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2];
+    d += `Q${f1(pts[i][0])} ${f1(pts[i][1])} ${f1(m[0])} ${f1(m[1])}`;
+  }
+  return `${d}L${f1(pts[n][0])} ${f1(pts[n][1])}z`;
+}
+
 const tuft = (x: number, y: number, s: number, flip: boolean) =>
-  `<path class="h-grass" transform="translate(${x} ${y}) scale(${flip ? -s : s} ${s})" d="M0 0c-1-3-1-6 0-8 1 2 1 4 1 6 0-3 1-6 3-8 0 3-1 6-1 9 1-2 3-3 4-3-1 2-2 3-3 4z"/>`;
+  `<path class="h-grass" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(flip ? -s : s)} ${f1(s)})" d="M0 0c-1-3-1-6 0-8 1 2 1 4 1 6 0-3 1-6 3-8 0 3-1 6-1 9 1-2 3-3 4-3-1 2-2 3-3 4z"/>`;
+
+/** 둘레에 걸친 바위. 덮개(이끼·눈)와 색은 스킨에 따라 CSS에서 정한다 */
+function boulder(x: number, y: number, r: number, rng: () => number): string {
+  const body = wobblyEllipse(x, y, r, r * 0.78, rng, 0.5, 7);
+  const cap = wobblyEllipse(x - r * 0.1, y - r * 0.42, r * 0.72, r * 0.32, rng, 0.35, 6);
+  return (
+    `<path class="h-rock" d="${body}"/>` +
+    `<ellipse class="h-rock-hi" cx="${f1(x - r * 0.35)}" cy="${f1(y - r * 0.3)}" rx="${f1(r * 0.3)}" ry="${f1(r * 0.16)}"/>` +
+    `<path class="h-rock-cap" d="${cap}"/>`
+  );
+}
+
+/** 둔덕 둘레에서 떨어져 나온 흙덩이. 매끈한 타원 실루엣을 깨뜨린다 */
+const clod = (x: number, y: number, r: number, rng: () => number) =>
+  `<path class="h-clod" d="${wobblyEllipse(x, y, r, r * 0.7, rng, 0.45, 6)}"/>` +
+  `<ellipse class="h-clod-hi" cx="${f1(x - r * 0.25)}" cy="${f1(y - r * 0.3)}" rx="${f1(r * 0.4)}" ry="${f1(r * 0.18)}"/>`;
+
+/* 스킨별 소품. 한 구멍에 네 스킨 몫을 모두 그려 두고 지금 스킨 것만 CSS로 보인다 */
+const flower = (x: number, y: number, s: number) =>
+  `<g class="h-flower" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)})"><path class="stem" d="M0 0q.5-3 0-5"/>` +
+  [0, 72, 144, 216, 288].map((a) => `<ellipse class="petal" cx="0" cy="-7.4" rx="1.5" ry="2.1" transform="rotate(${a} 0 -5.4)"/>`).join('') +
+  '<circle class="core" cx="0" cy="-5.4" r="1.1"/></g>';
+const clover = (x: number, y: number, s: number) =>
+  `<g class="h-clover" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)})">` +
+  [-50, 50, 180].map((a) => `<circle cx="0" cy="-1.6" r="1.5" transform="rotate(${a})"/>`).join('') +
+  '</g>';
+const cactus = (x: number, y: number, s: number, flip: boolean) =>
+  `<g class="h-cactus" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(flip ? -s : s)} ${f1(s)})">` +
+  '<path d="M-1.6 0v-9a1.6 1.6 0 0 1 3.2 0V0zM1.6-4.5h1.4a1 1 0 0 0 1-1V-7a1 1 0 0 1 2 0v1.8a3 3 0 0 1-3 3H1.6zM-1.6-3h-1a2.6 2.6 0 0 1-2.6-2.6v-.9a1 1 0 0 1 2 0v.6c0 .5.3.9.8.9h.8z"/>' +
+  '<path class="rib" d="M0-9.5v8.5"/></g>';
+const twig = (x: number, y: number, s: number, flip: boolean) =>
+  `<path class="h-twig" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(flip ? -s : s)} ${f1(s)})" d="M0 0l7-2.5m-3.2 1.1 1.6-2.4m-1.4 1.5 2.6-.2"/>`;
+const ripple = (x: number, y: number) =>
+  `<path class="h-ripple" d="M${f1(x)} ${f1(y)}q3-1.4 6 0t6 0M${f1(x + 2)} ${f1(y + 2.2)}q3-1.2 6 0"/>`;
+const leaf = (x: number, y: number, s: number, rot: number) =>
+  `<g class="h-leaf" transform="translate(${f1(x)} ${f1(y)}) rotate(${f1(rot)}) scale(${f1(s)})"><path d="M0 0c2-4 7-5 11-3-2 4-7 5-11 3z"/><path class="vein" d="M.5 0 9.5-2.6"/></g>`;
+const mushroom = (x: number, y: number, s: number) =>
+  `<g class="h-mush" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(s)})"><path class="stalk" d="M-1 0v-3.4h2V0z"/><path class="cap" d="M-3.6-3a3.6 3 0 0 1 7.2 0z"/><circle class="dot" cx="-1.2" cy="-4.4" r=".55"/><circle class="dot" cx="1.3" cy="-3.8" r=".45"/></g>`;
+const snowPile = (x: number, y: number, r: number, rng: () => number) =>
+  `<path class="h-snow" d="${wobblyEllipse(x, y, r, r * 0.45, rng, 0.3, 7)}"/>`;
+const iceShard = (x: number, y: number, s: number, flip: boolean) =>
+  `<g class="h-ice" transform="translate(${f1(x)} ${f1(y)}) scale(${f1(flip ? -s : s)} ${f1(s)})"><path d="M0 0 1.2-6.5 3-1zM2.4 0l2.4-4.4L5.6 0z"/><path class="glint" d="M.9-4.6.6-2"/></g>`;
 
 /**
  * 두더지가 사이에 끼도록 구멍을 뒤·앞 두 장으로 그린다. 색은 스킨 변수를 CSS에서 입힌다.
- * 같은 무늬가 반복되지 않게 구멍마다 시드로 돌·뿌리·풀 위치와 둘레 모양을 바꾼다.
+ * 구멍마다 시드로 둘레 모양·흙덩이·바위·소품을 바꿔 아홉 개가 모두 조금씩 다르다.
  */
 export function holeArt(seed = 0): { back: string; front: string } {
   const rng = mulberry32(seed * 7919 + 17);
   const pick = (a: number, b: number) => a + rng() * (b - a);
+  const chance = (p: number) => rng() < p;
 
-  const pebbles = (count: number, area: [number, number, number, number]) =>
-    Array.from({ length: count }, () => {
-      const rx = pick(1.4, 2.6);
-      return `<ellipse class="h-stone" cx="${pick(area[0], area[1]).toFixed(1)}" cy="${pick(area[2], area[3]).toFixed(1)}" rx="${rx.toFixed(1)}" ry="${(rx * 0.62).toFixed(1)}"/>`;
-    }).join('');
+  /** 둔덕 둘레 위의 한 점. a는 라디안(0=오른쪽, π/2=아래) */
+  const rim = (a: number, k = 1): Pt => [50 + Math.cos(a) * 45 * k, 33 + Math.sin(a) * 19.5 * k];
+
+  // 위쪽 둘레(뒤)와 아래쪽 둘레(앞)에 흙덩이를 흩뿌린다
+  const backClods = Array.from({ length: 1 + Math.floor(rng() * 3) }, () => {
+    const [x, y] = rim(pick(Math.PI * 1.1, Math.PI * 1.9), pick(0.95, 1.05));
+    return clod(x, y, pick(4.5, 7.5), rng);
+  }).join('');
+  const frontClods = Array.from({ length: 1 + Math.floor(rng() * 2) }, () => {
+    const [x, y] = rim(pick(Math.PI * 0.12, Math.PI * 0.88), pick(0.98, 1.06));
+    return clod(x, y, pick(4, 6.5), rng);
+  }).join('');
+
+  // 바위는 구멍마다 0–2개, 왼쪽·오른쪽·뒤 중 겹치지 않게 고른다
+  const spots = (['left', 'right', 'back'] as const).filter(() => chance(0.55)).slice(0, 2);
+  let backRocks = '';
+  let frontRocks = '';
+  for (const spot of spots) {
+    if (spot === 'back') {
+      const [x, y] = rim(pick(Math.PI * 1.25, Math.PI * 1.75), 0.98);
+      backRocks += boulder(x, y - 1, pick(7, 10), rng);
+    } else {
+      const a = spot === 'left' ? pick(Math.PI * 0.82, Math.PI * 0.96) : pick(Math.PI * 0.04, Math.PI * 0.18);
+      const [x, y] = rim(a, 1);
+      frontRocks += boulder(x, y + 2, pick(8, 11.5), rng);
+    }
+  }
 
   const rootX = pick(28, 70);
-  const root = rng() < 0.7 ? `<path class="h-root" d="M${rootX.toFixed(1)} 17.5q${pick(-3, 3).toFixed(1)} 4 ${pick(-1, 1).toFixed(1)} ${pick(6, 9).toFixed(1)}"/>` : '';
-  const backSide = rng() < 0.5;
+  const root = chance(0.7) ? `<path class="h-root" d="M${f1(rootX)} 17.5q${f1(pick(-3, 3))} 4 ${f1(pick(-1, 1))} ${f1(pick(6, 9))}"/>` : '';
+
+  // 소품은 바위가 없는 쪽에 둔다
+  const side = spots.includes('left') ? 1 : spots.includes('right') ? -1 : chance(0.5) ? 1 : -1;
+  const sx = (near: number) => (side > 0 ? 100 - near : near);
+  const flip = side < 0;
+  const backX = pick(14, 30) * (chance(0.5) ? 1 : -1) + 50;
+
+  const skins: Record<Skin, { back: string; front: string }> = {
+    garden: {
+      back: (chance(0.6) ? tuft(backX, pick(16, 18), 1.6, chance(0.5)) : '') + (chance(0.45) ? clover(100 - backX, 15, 1.6) : ''),
+      front:
+        tuft(sx(pick(5, 10)), pick(44, 47), 2, flip) +
+        (chance(0.65) ? flower(sx(pick(15, 22)), pick(51, 54), pick(1.3, 1.6)) : '') +
+        (chance(0.4) ? clover(pick(38, 62), pick(54, 56), 1.7) : ''),
+    },
+    desert: {
+      back: chance(0.55) ? cactus(backX, pick(16, 18), pick(1.4, 1.7), chance(0.5)) : '',
+      front:
+        (chance(0.6) ? cactus(sx(pick(6, 11)), pick(47, 50), pick(1.7, 2.1), flip) : twig(sx(pick(8, 14)), pick(49, 52), 1.9, flip)) +
+        (chance(0.7) ? ripple(pick(32, 52), pick(52, 54)) : ''),
+    },
+    jungle: {
+      back: leaf(backX - 8, pick(16, 18), pick(1.4, 1.7), pick(-30, -10)) + (chance(0.5) ? leaf(100 - backX, 15, 1.5, pick(190, 210)) : ''),
+      front:
+        leaf(sx(pick(2, 7)), pick(44, 47), pick(1.8, 2.2), side > 0 ? pick(190, 215) : pick(-35, -10)) +
+        (chance(0.65) ? mushroom(sx(pick(15, 22)), pick(52, 54), pick(1.5, 1.9)) : '') +
+        (chance(0.4) ? tuft(pick(40, 60), 57, 1.4, chance(0.5)) : ''),
+    },
+    snow: {
+      back: snowPile(backX, pick(15, 17), pick(9, 12), rng),
+      front:
+        snowPile(pick(32, 68), pick(48, 51), pick(11, 15), rng) +
+        (chance(0.6) ? iceShard(sx(pick(6, 12)), pick(48, 51), pick(1.7, 2.2), flip) : snowPile(sx(9), 45, 8, rng)),
+    },
+  };
+  const deco = (part: 'back' | 'front') =>
+    (Object.keys(skins) as Skin[]).map((s) => `<g class="h-deco deco-${s}">${skins[s][part]}</g>`).join('');
 
   const back =
     '<svg class="hole-back" viewBox="0 0 100 60" aria-hidden="true" focusable="false">' +
     '<ellipse class="h-shadow" cx="50" cy="42" rx="48" ry="16"/>' +
-    `<path class="h-mound" d="${wobblyEllipse(50, 33, 46.5, 20.5, rng, 0.06)}"/>` +
-    '<ellipse class="h-mound-top" cx="47" cy="29" rx="41" ry="14.5"/>' +
+    backClods +
+    `<path class="h-mound" d="${wobblyEllipse(50, 33, 46.5, 20.5, rng, 0.22, 14)}"/>` +
+    `<path class="h-mound-top" d="${wobblyEllipse(47, 29, 41, 14.5, rng, 0.1, 12)}"/>` +
     '<ellipse class="h-mound-shine" cx="34" cy="21" rx="12" ry="3"/>' +
-    pebbles(rng() < 0.6 ? 1 : 2, [18, 82, 15.5, 17]) +
-    (rng() < 0.6 ? tuft(backSide ? pick(8, 14) : pick(86, 92), pick(22, 25), 1.1, !backSide) : '') +
+    backRocks +
+    deco('back') +
     '<ellipse class="h-pit-wall" cx="50" cy="30" rx="38" ry="14"/>' +
     root +
     '<ellipse class="h-pit" cx="50" cy="33" rx="34" ry="10.5"/>' +
@@ -221,15 +350,14 @@ export function holeArt(seed = 0): { back: string; front: string } {
     '<path class="h-rim-light" d="M15 26A38 14 0 0 1 85 26"/>' +
     '</svg>';
 
-  const frontSide = rng() < 0.5;
   const front =
     '<svg class="hole-front" viewBox="0 0 100 60" aria-hidden="true" focusable="false">' +
-    '<path class="h-lip" d="M12 30A38 14 0 0 0 88 30L96.5 33A46.5 20.5 0 0 1 3.5 33z"/>' +
+    `<path class="h-lip" d="${lipPath(rng, [46.5, 20.5], 0)}"/>` +
     '<path class="h-lip-top" d="M12 30A38 14 0 0 0 88 30L90.5 31.6A40.5 16.6 0 0 1 9.5 31.6z"/>' +
-    pebbles(rng() < 0.5 ? 1 : 2, [22, 78, 47, 51]) +
-    (rng() < 0.45 ? `<path class="h-crack" d="M${pick(30, 70).toFixed(1)} 47.5l2 2-1 3"/>` : '') +
-    tuft(frontSide ? pick(5, 12) : pick(88, 95), pick(42, 45), 1.3, !frontSide) +
-    (rng() < 0.35 ? tuft(pick(40, 60), 56, 0.9, rng() < 0.5) : '') +
+    frontClods +
+    (chance(0.45) ? `<path class="h-crack" d="M${f1(pick(30, 70))} 47.5l2 2-1 3"/>` : '') +
+    frontRocks +
+    deco('front') +
     '</svg>';
   return { back, front };
 }

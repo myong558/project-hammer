@@ -1,13 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { COUNTDOWN, DURATION, GOLDEN_PITY, Game } from '../src/game/engine';
+import { COUNTDOWN, DEBUT_GAP, DURATION, GOLDEN_PITY, Game } from '../src/game/engine';
+import { mulberry32 } from '../src/game/rng';
 import { FEVER_COMBO } from '../src/game/scoring';
-import { SEGMENTS, neighbors, pickKind, segmentIndexAt } from '../src/game/spawner';
-import type { GameEvent } from '../src/game/types';
+import { FEVER_SEGMENT, SEGMENTS, neighbors, pickKind, segmentIndexAt } from '../src/game/spawner';
+import type { GameEvent, MoleKind } from '../src/game/types';
 
 /** 정해진 값을 차례로 돌려주는 난수. 다 쓰면 마지막 값을 반복 */
 function seq(...values: number[]) {
   let i = 0;
   return () => values[Math.min(i++, values.length - 1)];
+}
+
+/** 아무것도 치지 않고 한 판을 끝까지 돌린 등장 기록(왕 두더지 제외) */
+function spawnLog(rng: () => number) {
+  const { game } = playingGame(rng);
+  const spawns: { kind: MoleKind; time: number }[] = [];
+  game.on((e) => e.type === 'spawn' && e.mole.kind !== 'king' && spawns.push({ kind: e.mole.kind, time: game.time }));
+  while (game.phase === 'playing') game.tick(50);
+  return spawns;
 }
 
 function playingGame(rng = seq(0)) {
@@ -27,6 +37,12 @@ describe('구간', () => {
     expect(segmentIndexAt(19_999)).toBe(2);
     expect(segmentIndexAt(25_000)).toBe(4);
     expect(SEGMENTS[4].id).toBe('spurt');
+  });
+
+  it('구간마다 가중치 합이 100이라 그대로 퍼센트다', () => {
+    for (const seg of [...SEGMENTS, FEVER_SEGMENT]) {
+      expect(Object.values(seg.weights).reduce((a, b) => a + b, 0)).toBe(100);
+    }
   });
 });
 
@@ -178,15 +194,50 @@ describe('Game', () => {
   });
 
   it(`황금 두더지가 ${GOLDEN_PITY}번 연달아 안 나오면 다음은 반드시 황금`, () => {
-    // 난수 0이면 가중치 첫 항목(보통 두더지)만 뽑힌다
-    const { game } = playingGame(seq(0));
-    const kinds: string[] = [];
-    game.on((e) => {
-      if (e.type === 'spawn') kinds.push(e.mole.kind);
-    });
-    for (let t = 0; t < 12_000 && kinds.length <= GOLDEN_PITY; t += 50) game.tick(50);
-    expect(kinds.slice(0, GOLDEN_PITY).every((k) => k === 'normal')).toBe(true);
-    expect(kinds[GOLDEN_PITY]).toBe('golden');
+    // 난수 0이면 가중치 첫 항목(보통 두더지)만 뽑혀, 확정 등장과 보정으로만 황금이 나온다
+    const spawns = spawnLog(seq(0));
+    let since = 0;
+    let pityHits = 0;
+    for (const { kind } of spawns) {
+      if (kind === 'golden') {
+        if (since === GOLDEN_PITY) pityHits++;
+        since = 0;
+      } else since++;
+      expect(since).toBeLessThanOrEqual(GOLDEN_PITY);
+    }
+    expect(pityHits).toBeGreaterThan(0);
+  });
+
+  it('새 두더지는 자기 구간 초반에 확정으로 한 번씩 선보인다', () => {
+    const spawns = spawnLog(seq(0));
+    const first = (kind: MoleKind) => spawns.find((s) => s.kind === kind)!;
+    expect(spawns[0].kind).toBe('normal');
+    expect(first('golden').time).toBeLessThan(5_000);
+    expect(first('bomb').time).toBeGreaterThanOrEqual(5_000);
+    expect(first('bomb').time).toBeLessThan(10_000);
+    expect(first('helmet').time).toBeGreaterThanOrEqual(10_000);
+    expect(first('swift').time).toBeGreaterThan(first('helmet').time);
+    expect(first('swift').time).toBeLessThan(20_000);
+    const between = spawns.indexOf(first('swift')) - spawns.indexOf(first('helmet'));
+    expect(between).toBeGreaterThanOrEqual(DEBUT_GAP);
+  });
+
+  it('같은 특수 두더지는 연달아 나오지 않고, 폭탄은 구간 상한을 넘지 않는다', () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const game = new Game(mulberry32(seed));
+      const kinds: MoleKind[] = [];
+      game.on((e) => e.type === 'spawn' && e.mole.kind !== 'king' && kinds.push(e.mole.kind));
+      game.start();
+      game.tick(COUNTDOWN);
+      while (game.phase === 'playing') {
+        game.tick(50);
+        const seg = SEGMENTS[segmentIndexAt(game.time)];
+        expect(game.moles.filter((m) => m.kind === 'bomb').length).toBeLessThanOrEqual(seg.maxBombs);
+      }
+      for (let i = 1; i < kinds.length; i++) {
+        if (kinds[i] !== 'normal') expect(kinds[i]).not.toBe(kinds[i - 1]);
+      }
+    }
   });
 
   it('같은 시드면 같은 판이 나온다', () => {

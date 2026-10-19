@@ -26,7 +26,9 @@ const HOLE_COOLDOWN = 300;
 const TIME_BONUS = 3_000;
 const MAX_CLOCKS = 2;
 /** 황금 두더지가 이만큼 연달아 안 나오면 다음은 반드시 황금 */
-export const GOLDEN_PITY = 7;
+export const GOLDEN_PITY = 10;
+/** 확정 등장 사이에 끼는 최소 두더지 수. 새 얼굴이 한꺼번에 몰려나오지 않게 한다 */
+export const DEBUT_GAP = 3;
 const SLOW_DURATION = 2_000;
 const SLOW_FACTOR = 1.6;
 const FREEZE_EXTEND = 1_000;
@@ -72,6 +74,12 @@ export class Game {
   private clocks = 0;
   private kingSpawned = false;
   private sinceGolden = 0;
+  /** 이번 판에 한 번이라도 나온 두더지 */
+  private readonly seen = new Set<MoleKind>();
+  private segSpawnsFor: Segment | null = null;
+  private segSpawns = 0;
+  private sinceDebut = Infinity;
+  private lastKind: MoleKind = 'normal';
   private bannerIndex = -1;
 
   constructor(rng: Rng) {
@@ -241,10 +249,34 @@ export class Game {
 
     const active = this.moles.filter((m) => m.kind !== 'king').length;
     if (active >= seg.maxActive) return;
-    const exclude: MoleKind[] = this.clocks >= MAX_CLOCKS ? ['clock'] : [];
-    let kind = pickKind(seg.weights, this.rng, exclude);
-    if (kind !== 'golden' && (seg.weights.golden ?? 0) > 0 && this.sinceGolden >= GOLDEN_PITY) kind = 'golden';
-    if (this.spawn(kind)) this.sinceGolden = kind === 'golden' ? 0 : this.sinceGolden + 1;
+
+    if (this.segSpawnsFor !== seg) {
+      this.segSpawnsFor = seg;
+      this.segSpawns = 0;
+    }
+    const kind = this.chooseKind(seg);
+    if (!this.spawn(kind)) return;
+    this.segSpawns++;
+    this.sinceDebut++;
+    this.sinceGolden = kind === 'golden' ? 0 : this.sinceGolden + 1;
+    this.lastKind = kind;
+  }
+
+  /** 황금 보정 → 확정 등장 → 가중치 추첨 순으로 고른다 */
+  private chooseKind(seg: Segment): MoleKind {
+    if ((seg.weights.golden ?? 0) > 0 && this.sinceGolden >= GOLDEN_PITY) return 'golden';
+    const debut = seg.debut?.find((k) => !this.seen.has(k));
+    if (debut && this.segSpawns >= 1 && this.sinceDebut >= DEBUT_GAP) {
+      this.sinceDebut = 0;
+      return debut;
+    }
+
+    const exclude: MoleKind[] = [];
+    if (this.clocks >= MAX_CLOCKS) exclude.push('clock');
+    if (this.moles.filter((m) => m.kind === 'bomb').length >= seg.maxBombs) exclude.push('bomb');
+    // 같은 특수 두더지가 연달아 나오면 특별함이 옅어진다
+    if (this.lastKind !== 'normal') exclude.push(this.lastKind);
+    return pickKind(seg.weights, this.rng, exclude);
   }
 
   private spawn(kind: MoleKind, hole?: number): Mole | null {
@@ -259,6 +291,7 @@ export class Game {
       jumped: false,
     };
     if (kind === 'clock') this.clocks++;
+    this.seen.add(kind);
     this.moles.push(mole);
     this.emit({ type: 'spawn', mole });
     return mole;

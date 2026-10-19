@@ -59,9 +59,20 @@ function openModal(host: HTMLElement, content: HTMLElement, label: string): () =
     e.stopPropagation();
     close();
   };
+  // 게임 판은 큰 화면에서 가운데 상자로 멈추므로, 딤은 판 밖까지 덮도록 body에 붙인다.
+  // 글자 크기만 판(화면)의 크기를 그대로 따른다
+  const fit = () => {
+    if (!host.isConnected) return close();
+    backdrop.style.fontSize = getComputedStyle(host).fontSize;
+  };
+  // 화면을 다시 그려 판이 바뀌면 대화상자도 함께 사라진다
+  const watch = new MutationObserver(() => host.isConnected || close());
+  if (host.parentNode) watch.observe(host.parentNode, { childList: true });
   const close = () => {
     backdrop.remove();
+    watch.disconnect();
     document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('resize', fit);
     if (opener?.isConnected) opener.focus();
   };
   backdrop.addEventListener('pointerdown', (e) => {
@@ -69,7 +80,9 @@ function openModal(host: HTMLElement, content: HTMLElement, label: string): () =
   });
   content.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', close));
   document.addEventListener('keydown', onKey, true);
-  host.append(backdrop);
+  window.addEventListener('resize', fit);
+  fit();
+  document.body.append(backdrop);
   content.querySelector<HTMLElement>('[aria-pressed="true"], button')?.focus();
   return close;
 }

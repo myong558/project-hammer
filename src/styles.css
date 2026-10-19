@@ -801,6 +801,41 @@ button.dex-item:focus-visible {
 .h-lip-top { fill: color-mix(in srgb, var(--dirt) 70%, white); }
 .h-crack { fill: none; stroke: color-mix(in srgb, var(--dirt-dark) 80%, black); stroke-width: 0.8; stroke-linecap: round; }
 
+/* 둘레의 흙덩이·바위. 바위 색과 덮개(이끼·눈)는 스킨마다 다르다 */
+:root { --rock: #a2a09a; --rock-cap: transparent; }
+:root[data-skin='desert'] { --rock: #d39a62; }
+:root[data-skin='jungle'] { --rock: #8c9488; --rock-cap: #4f9a3c; }
+:root[data-skin='snow'] { --rock: #8d98a6; --rock-cap: #f6fbff; }
+.h-clod { fill: var(--dirt); stroke: color-mix(in srgb, var(--dirt-dark) 60%, black); stroke-width: 0.9; stroke-linejoin: round; }
+.h-clod-hi { fill: rgb(255 255 255 / 0.2); }
+.h-rock { fill: var(--rock); stroke: color-mix(in srgb, var(--rock) 45%, black); stroke-width: 1; stroke-linejoin: round; }
+.h-rock-hi { fill: rgb(255 255 255 / 0.35); }
+.h-rock-cap { fill: var(--rock-cap); }
+
+/* 스킨별 소품: 구멍마다 네 스킨 몫이 다 그려져 있고 지금 스킨 것만 보인다 */
+.h-deco { display: none; }
+:root:not([data-skin]) .deco-garden,
+:root[data-skin='garden'] .deco-garden,
+:root[data-skin='desert'] .deco-desert,
+:root[data-skin='jungle'] .deco-jungle,
+:root[data-skin='snow'] .deco-snow { display: inline; }
+.h-flower .stem { fill: none; stroke: var(--grass-dark); stroke-width: 0.8; stroke-linecap: round; }
+.h-flower .petal { fill: #fff; stroke: #e8a3be; stroke-width: 0.4; }
+.h-flower .core { fill: #ffcf3d; }
+.h-clover { fill: color-mix(in srgb, var(--grass-dark) 80%, black); }
+.h-cactus { fill: #5f9a4c; stroke: #35612a; stroke-width: 0.6; stroke-linejoin: round; }
+.h-cactus .rib { fill: none; stroke: rgb(255 255 255 / 0.3); stroke-width: 0.5; }
+.h-twig { fill: none; stroke: #7a5a3a; stroke-width: 0.9; stroke-linecap: round; }
+.h-ripple { fill: none; stroke: color-mix(in srgb, var(--dirt) 60%, white); stroke-width: 0.7; stroke-linecap: round; opacity: 0.8; }
+.h-leaf { fill: #3f9446; stroke: #1f5a2a; stroke-width: 0.5; stroke-linejoin: round; }
+.h-leaf .vein { fill: none; stroke: rgb(255 255 255 / 0.35); stroke-width: 0.45; }
+.h-mush .stalk { fill: #f3e6cf; stroke: #a08868; stroke-width: 0.4; }
+.h-mush .cap { fill: #e25b45; stroke: #8f2c1f; stroke-width: 0.5; }
+.h-mush .dot { fill: #fff; }
+.h-snow { fill: #f6fbff; stroke: #c4d6e8; stroke-width: 0.7; }
+.h-ice { fill: #bfe6fb; stroke: #6aa6cf; stroke-width: 0.5; stroke-linejoin: round; }
+.h-ice .glint { fill: none; stroke: #fff; stroke-width: 0.5; stroke-linecap: round; }
+
 /* 폭탄이 올라온 구멍은 붉게 달아오른다 */
 .hole:has(.kind-bomb.up) .hole-back {
   filter: brightness(var(--dirt-dim)) drop-shadow(0 0 3cqw rgb(255 40 40 / 0.8));
@@ -1928,7 +1963,7 @@ button.dex-item:focus-visible {
 /* ---------- 대화상자: 도감 설명 · 설정 ---------- */
 
 .modal-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 30;
   display: grid;
