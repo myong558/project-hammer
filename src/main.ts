@@ -1,0 +1,343 @@
+import './styles.css';
+import { Sound, type SoundName } from './audio';
+import { Game } from './game/engine';
+import { MOLES } from './game/moles';
+import { dateKey, dateSeed, mulberry32, randomSeed } from './game/rng';
+import { nextGoal } from './game/scoring';
+import type { MissionId } from './game/missions';
+import type { GameEvent, GameResult, MoleKind } from './game/types';
+import { setLang, t } from './i18n';
+import { copyText, shareText } from './share';
+import { emptyProgress, loadSave, writeSave } from './storage';
+import { applySkin, applyTheme, resolveSkin } from './theme';
+import { Board } from './ui/board';
+import { Effects, Hammer } from './ui/effects';
+import { Hud } from './ui/hud';
+import { gameScreen, resultScreen, startScreen, type Mode } from './ui/screens';
+
+const app = document.querySelector<HTMLDivElement>('#app')!;
+const save = loadSave();
+const sound = new Sound(save.sound);
+setLang(save.lang);
+applyTheme(save.theme);
+applySkin(resolveSkin(save.skin, new Date()));
+let teardown: (() => void) | null = null;
+
+/** 숫자패드 배치: 7 8 9 / 4 5 6 / 1 2 3 */
+const NUMPAD: Record<string, number> = { '7': 0, '8': 1, '9': 2, '4': 3, '5': 4, '6': 5, '1': 6, '2': 7, '3': 8 };
+const COMBO_WORDS: Record<number, string> = { 2: 'Nice!', 3: 'Great!' };
+const HIT_SOUND: Partial<Record<MoleKind, SoundName>> = { golden: 'golden', king: 'king', clock: 'timeBonus', ice: 'freeze' };
+
+function mount(el: HTMLElement): void {
+  teardown?.();
+  teardown = null;
+  app.replaceChildren(el);
+}
+
+function todayLabel(d: Date): string {
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function vibrate(pattern: number | number[]): void {
+  if (save.shake) navigator.vibrate?.(pattern);
+}
+
+function showStart(settings?: 'open' | 'reset'): void {
+  const today = new Date();
+  const todaySkin = resolveSkin('auto', today);
+  applySkin(resolveSkin(save.skin, today));
+  mount(
+    startScreen({
+      save,
+      today: dateKey(today),
+      todayLabel: todayLabel(today),
+      todaySkin,
+      settings,
+      onPlay: play,
+      onToggle(key) {
+        save[key] = !save[key];
+        sound.enabled = save.sound;
+        writeSave(save);
+        showStart();
+      },
+      onLang(lang) {
+        save.lang = lang;
+        setLang(lang);
+        writeSave(save);
+        showStart(document.querySelector('.modal .settings') ? 'open' : undefined);
+      },
+      onTheme(theme) {
+        save.theme = theme;
+        applyTheme(theme);
+        writeSave(save);
+      },
+      onSkin(skin) {
+        save.skin = skin;
+        applySkin(resolveSkin(skin, today));
+        writeSave(save);
+      },
+      onReset() {
+        Object.assign(save, emptyProgress());
+        writeSave(save);
+        showStart('reset');
+      },
+    }),
+  );
+}
+
+function play(mode: Mode): void {
+  sound.unlock();
+  sound.pitch = 1;
+  const daily = mode === 'daily';
+  const today = new Date();
+  applySkin(resolveSkin(save.skin, today));
+  const game = new Game(mulberry32(daily ? dateSeed(today) : randomSeed()));
+
+  const view = gameScreen({
+    daily,
+    onPause: () => game.pause(),
+    onResume: () => game.resume(),
+    onRestart: () => play(mode),
+    onQuit: showStart,
+  });
+  mount(view.el);
+
+  const fx = new Effects(view.stage, () => save.shake);
+  const hammer = new Hammer(view.stage);
+  const board = new Board(view.board, (hole) => game.hit(hole));
+  const hud = new Hud(view.hud, game);
+  const timers = new Set<ReturnType<typeof setTimeout>>();
+  const later = (ms: number, fn: () => void) => {
+    const id = setTimeout(() => {
+      timers.delete(id);
+      fn();
+    }, ms);
+    timers.add(id);
+  };
+  let hitstopUntil = 0;
+  let lastSecond = -1;
+
+  view.stage.addEventListener('pointerdown', (e) => {
+    hammer.swing(e.clientX, e.clientY, e.pointerType !== 'mouse');
+  });
+
+  const holeEl = (hole: number) => board.holes[hole];
+  const hitstop = (ms: number) => (hitstopUntil = performance.now() + ms);
+
+  const handle = (e: GameEvent) => {
+    switch (e.type) {
+      case 'countdown':
+        view.showCountdown(e.n > 0 ? String(e.n) : 'GO!');
+        sound.play(e.n > 0 ? 'count' : 'go');
+        break;
+      case 'start':
+        view.showCountdown(null);
+        break;
+      case 'segment':
+        if (e.id === 'spurt') {
+          view.el.classList.add('spurt');
+          fx.banner(t('segment.spurt'), 'spurt');
+        } else if (e.id === 'main' || e.id === 'melee' || e.id === 'rush') {
+          fx.banner(t(`segment.${e.id}`));
+        }
+        break;
+      case 'spawn':
+        board.spawn(e.mole);
+        if (e.mole.kind === 'king') fx.banner(t('banner.kingAppear'), 'king');
+        break;
+      case 'jump':
+        board.jump(e.mole, e.from);
+        sound.play('jump');
+        break;
+      case 'escape':
+        board.escape(e.mole);
+        if (MOLES[e.mole.kind].good && game.phase === 'playing') sound.play('tease');
+        break;
+      case 'damage':
+        board.damage(e.mole);
+        if (e.mole.kind === 'helmet') {
+          fx.popup(holeEl(e.mole.hole), t('popup.clink'), 'clink');
+          sound.play('clink');
+        } else {
+          fx.popup(holeEl(e.mole.hole), `${e.mole.hp}`, 'king');
+          sound.play('king');
+          fx.shake('small');
+        }
+        hitstop(40);
+        vibrate(10);
+        break;
+      case 'hit': {
+        const { mole, points } = e;
+        const el = holeEl(mole.hole);
+        board.hit(mole);
+        const variant = mole.kind === 'golden' || mole.kind === 'king' ? 'gold' : game.inFever ? 'fever' : '';
+        fx.popup(el, `+${points}`, variant);
+        if (mole.kind === 'clock') fx.popup(el, t('popup.time'), 'time');
+        if (mole.kind === 'ice') fx.popup(el, t('popup.ice'), 'ice');
+        fx.burst(el, mole.kind === 'golden' ? ['✨', '⭐'] : mole.kind === 'king' ? ['👑', '🎉', '✨'] : ['💥', '✦']);
+        sound.play(HIT_SOUND[mole.kind] ?? 'hit');
+        if (mole.kind === 'king') {
+          fx.banner(t('banner.kingDown'), 'king');
+          fx.shake('big');
+          hitstop(140);
+          vibrate([30, 30, 60]);
+        } else {
+          hitstop(55);
+          vibrate(15);
+        }
+        break;
+      }
+      case 'bomb':
+        board.bomb(e.mole);
+        fx.popup(holeEl(e.mole.hole), `${e.points}`, 'bad');
+        fx.burst(holeEl(e.mole.hole), ['💥', '🔥', '💨'], 8);
+        fx.shake('big');
+        sound.play('bomb');
+        hitstop(120);
+        vibrate([60, 40, 60]);
+        break;
+      case 'whiff':
+        board.whiff(e.hole);
+        hammer.stun();
+        sound.play('whiff');
+        break;
+      case 'comboUp':
+        if (COMBO_WORDS[e.multiplier]) fx.banner(`${COMBO_WORDS[e.multiplier]} x${e.multiplier}`, 'combo');
+        sound.play('comboUp');
+        break;
+      case 'comboBreak':
+        if (e.combo >= 5) {
+          fx.banner(t('banner.comboBreak', { n: e.combo }), 'break');
+          sound.play('comboBreak');
+        }
+        break;
+      case 'feverStart':
+        view.el.classList.add('fever');
+        sound.pitch = 1.25;
+        fx.banner('Awesome! 🔥 FEVER x2', 'fever');
+        sound.play('fever');
+        break;
+      case 'feverEnd':
+        view.el.classList.remove('fever');
+        sound.pitch = 1;
+        break;
+      case 'timeBonus':
+        sound.play('timeBonus');
+        break;
+      case 'freeze':
+        view.el.classList.add('frozen');
+        later(2000, () => view.el.classList.remove('frozen'));
+        break;
+      case 'pause':
+        view.showPause(true);
+        break;
+      case 'resume':
+        view.showPause(false);
+        break;
+      case 'over':
+        view.el.classList.remove('fever', 'spurt', 'frozen');
+        view.showCountdown(t('countdown.end'));
+        sound.pitch = 1;
+        sound.play('end');
+        later(1100, () => showResult(e.result, game.mission.id, mode, today));
+        break;
+    }
+  };
+  const off = game.on(handle);
+
+  let raf = 0;
+  let last = performance.now();
+  const frame = (now: number) => {
+    const dt = Math.min(now - last, 100);
+    last = now;
+    if (now >= hitstopUntil) game.tick(dt);
+    hud.render(game);
+    if (game.phase === 'playing' && game.lastSpurt) {
+      const sec = Math.ceil(game.remaining / 1000);
+      if (sec !== lastSecond) {
+        lastSecond = sec;
+        sound.play('tick');
+      }
+    }
+    raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
+      if (game.phase === 'playing') game.pause();
+      else game.resume();
+      return;
+    }
+    const hole = NUMPAD[e.key];
+    if (hole === undefined || e.repeat) return;
+    e.preventDefault();
+    const rect = board.holes[hole].getBoundingClientRect();
+    hammer.swing(rect.left + rect.width / 2, rect.top + rect.height / 3, true);
+    board.press(hole);
+    game.hit(hole);
+  };
+  const onVisibility = () => {
+    if (document.hidden) game.pause();
+  };
+  window.addEventListener('keydown', onKey);
+  document.addEventListener('visibilitychange', onVisibility);
+
+  teardown = () => {
+    cancelAnimationFrame(raf);
+    off();
+    timers.forEach(clearTimeout);
+    window.removeEventListener('keydown', onKey);
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+
+  game.start();
+}
+
+function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: Date): void {
+  const daily = mode === 'daily';
+  const today = dateKey(date);
+  const prevBest = daily ? (save.daily?.date === today ? save.daily.best : 0) : save.best;
+  const isRecord = result.score > prevBest && result.score > 0;
+  if (isRecord) {
+    if (daily) save.daily = { date: today, best: result.score };
+    else save.best = result.score;
+  }
+
+  const dex = new Set(save.dex);
+  const caught = (Object.keys(result.stats.kills) as MoleKind[]).filter((k) => result.stats.kills[k] > 0);
+  if (result.stats.bombs > 0) caught.push('bomb');
+  const newDex = caught.filter((k) => !dex.has(k));
+  newDex.forEach((k) => dex.add(k));
+  save.dex = [...dex];
+  for (const k of caught) save.kills[k] += k === 'bomb' ? result.stats.bombs : result.stats.kills[k];
+  writeSave(save);
+
+  mount(
+    resultScreen({
+      result,
+      daily,
+      isRecord,
+      newDex,
+      goal: nextGoal(result.score, prevBest, dex),
+      missionId,
+      onRetry: () => play(mode),
+      onHome: showStart,
+      onShare: () => copyText(shareText(result, { date, daily })),
+    }),
+  );
+  if (isRecord) sound.play('record');
+
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      play(mode);
+    } else if (e.key === 'Escape') {
+      showStart();
+    }
+  };
+  window.addEventListener('keydown', onKey);
+  teardown = () => window.removeEventListener('keydown', onKey);
+}
+
+showStart();

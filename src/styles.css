@@ -1,0 +1,2269 @@
+:root {
+  --bg-base: #f4efe6;
+  --bg: color-mix(in srgb, var(--bg-base) 88%, var(--skin-tint));
+  --fg: #2b2118;
+  --muted: #7a6a5a;
+  --surface-base: #fffaf2;
+  --border-base: #e3d6c3;
+  --surface: color-mix(in srgb, var(--surface-base) 90%, var(--skin-tint));
+  --border: color-mix(in srgb, var(--border-base) 78%, var(--skin-tint));
+  --sky-top: var(--sky-top-day);
+  --sky-bottom: var(--sky-bottom-day);
+  --night: 0;
+  --grass: #8cc66d;
+  --grass-dark: #6aa84f;
+  --dirt: #8b5e3c;
+  --dirt-dark: #5b3a22;
+  --pit: #2a1a10;
+  --mole: #8a5a3b;
+  --mole-belly: #c9936b;
+  --accent: #ff7a3d;
+  --accent-fg: #fff;
+  --gold: #ffc93c;
+  --bad: #e5484d;
+  --ice: #6cc3f0;
+  --stage-shade: transparent;
+  --dirt-dim: 1;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+/* 다크: 기기 설정이 다크이고 라이트를 고르지 않았을 때, 또는 다크를 직접 골랐을 때 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg-base: #1d1914;
+    --fg: #f0e8dc;
+    --muted: #a8998a;
+    --surface-base: #2a241d;
+    --border-base: #3d342a;
+    --sky-top: var(--sky-top-night);
+    --sky-bottom: var(--sky-bottom-night);
+    --night: 1;
+    --stage-shade: rgb(0 0 0 / 0.38);
+    --dirt-dim: 0.72;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg-base: #1d1914;
+  --fg: #f0e8dc;
+  --muted: #a8998a;
+  --surface-base: #2a241d;
+  --border-base: #3d342a;
+  --sky-top: var(--sky-top-night);
+  --sky-bottom: var(--sky-bottom-night);
+  --night: 1;
+  --stage-shade: rgb(0 0 0 / 0.38);
+  --dirt-dim: 0.72;
+  color-scheme: dark;
+}
+
+/* 스킨: 판 색과 흙, 배경 빛깔, 판 가장자리 장식 */
+:root,
+:root[data-skin='garden'] {
+  --skin-tint: #8cc66d;
+  --grass: #8cc66d;
+  --grass-dark: #6aa84f;
+  --dirt: #8b5e3c;
+  --dirt-dark: #5b3a22;
+  --pit: #2a1a10;
+  --accent: #ff7a3d;
+  --sky-top-day: #8fd0ff;
+  --sky-bottom-day: #e6f6ff;
+  --sky-top-night: #0b1430;
+  --sky-bottom-night: #2a3a5c;
+  --sun: #fff6b0;
+  --sun-glow: rgb(255 236 140 / 0.65);
+  --cloud: #ffffff;
+  --particle: #ff9cbf;
+  --d1: '🌷'; --d2: '🌼'; --d3: '🍀'; --d4: '🌱'; --d5: '🌸'; --d6: '🐞'; --d7: '🌼'; --d8: '🌿';
+}
+
+:root[data-skin='desert'] {
+  --skin-tint: #e8b860;
+  --grass: #f2d08e;
+  --grass-dark: #d9a85a;
+  --dirt: #b9773e;
+  --dirt-dark: #7c4a22;
+  --pit: #3a2412;
+  --accent: #d9622b;
+  --sky-top-day: #ffbe73;
+  --sky-bottom-day: #fff0d4;
+  --sky-top-night: #1c1030;
+  --sky-bottom-night: #55303d;
+  --sun: #fff1bd;
+  --sun-glow: rgb(255 190 110 / 0.75);
+  --cloud: rgb(255 255 255 / 0.55);
+  --particle: #f4d29a;
+  --d1: '🌵'; --d2: '☀️'; --d3: '🪨'; --d4: '🦂'; --d5: '🌵'; --d6: '🐫'; --d7: '🪨'; --d8: '🌾';
+}
+
+:root[data-skin='jungle'] {
+  --skin-tint: #2f8a45;
+  --grass: #45a356;
+  --grass-dark: #23703a;
+  --dirt: #6b4a2b;
+  --dirt-dark: #3f2a16;
+  --pit: #1a120a;
+  --accent: #e2557a;
+  --sky-top-day: #86cfa9;
+  --sky-bottom-day: #def4e5;
+  --sky-top-night: #04130d;
+  --sky-bottom-night: #133a2a;
+  --sun: #fffbe0;
+  --sun-glow: rgb(255 255 200 / 0.5);
+  --cloud: rgb(255 255 255 / 0.5);
+  --particle: #fff27a;
+  --d1: '🌴'; --d2: '🦜'; --d3: '🌿'; --d4: '🍃'; --d5: '🌺'; --d6: '🐒'; --d7: '🍌'; --d8: '🍃';
+}
+
+:root[data-skin='snow'] {
+  --skin-tint: #a8c8e8;
+  --grass: #eef5fb;
+  --grass-dark: #bed4e9;
+  --dirt: #8597ad;
+  --dirt-dark: #56667b;
+  --pit: #1f2b3b;
+  --accent: #3b82d6;
+  --sky-top-day: #a6cbee;
+  --sky-bottom-day: #f1f7fc;
+  --sky-top-night: #0a1630;
+  --sky-bottom-night: #2f4566;
+  --sun: #ffffff;
+  --sun-glow: rgb(255 255 255 / 0.85);
+  --cloud: #f4f8fc;
+  --particle: #ffffff;
+  --d1: '❄️'; --d2: '🏔️'; --d3: '🌲'; --d4: '⛄'; --d5: '❄️'; --d6: '🐧'; --d7: '🌲'; --d8: '🌨️';
+}
+
+[hidden] {
+  display: none !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ---------- 프레임: 어떤 창 크기에서도 스크롤 없이 한 화면 ----------
+ * 지원 범위: 휴대폰 320×568(가로 568×320)부터 태블릿 768×1024(가로 1024×768)까지 비율대로 커지고,
+ * 그보다 큰 창에서는 이 크기로 멈춘 채 가운데에 놓인다. */
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  width: min(100vw, 768px);
+  height: min(100vh, 1024px);
+  height: min(100dvh, 1024px);
+  container-type: size;
+  overflow: hidden;
+  /* 움직이는 배경 위에서도 글자가 읽히도록 가운데를 옅게 덮는다 */
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--bg) 80%, transparent) 45%, transparent 100%);
+}
+
+@media (orientation: landscape) {
+  #app {
+    width: min(100vw, 1024px);
+    height: min(100vh, 768px);
+    height: min(100dvh, 768px);
+  }
+}
+
+/* PC(마우스·트랙패드가 주 입력): 태블릿 상한 없이 창 크기에 맞춰 비율대로 커진다.
+ * 휴대폰·태블릿(터치가 주 입력)은 위의 상한과 가운데 정렬을 그대로 쓴다. */
+@media (hover: hover) and (pointer: fine) {
+  #app {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+
+/* 세로는 360×640, 가로는 640×360 설계 기준. 화면 안의 모든 크기는 em이라 이 한 값으로 함께 커지고 작아진다 */
+.screen {
+  --u: min(calc(100cqw / 360), calc(100cqh / 640));
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 1em;
+  font-size: calc(16 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  gap: 0.5em;
+  text-align: center;
+  overflow: hidden;
+}
+
+.col {
+  width: 100%;
+  max-width: 24em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+@media (orientation: landscape) {
+  .screen {
+    --u: min(calc(100cqw / 640), calc(100cqh / 360));
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.5em;
+  }
+
+  .col {
+    flex: 1 1 0;
+    max-width: 19em;
+  }
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.btn,
+.chip,
+.pause-btn {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: 0.85em;
+  transition: transform 80ms, box-shadow 80ms;
+}
+
+.btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1em;
+  width: 100%;
+  padding: 0.6em 1em;
+  font-size: 1.05em;
+  font-weight: 700;
+  box-shadow: 0 0.25em 0 var(--border);
+}
+
+.btn:active {
+  transform: translateY(0.2em);
+  box-shadow: 0 0.05em 0 var(--border);
+}
+
+.btn small {
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 82%, black);
+  color: var(--accent-fg);
+  box-shadow: 0 0.25em 0 color-mix(in srgb, var(--accent) 65%, black);
+}
+
+.btn.ghost {
+  background: transparent;
+  box-shadow: none;
+}
+
+.btn:focus-visible,
+.chip:focus-visible,
+.pause-btn:focus-visible,
+.hole:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 패널 없이 배경 위에 바로 놓인 글자는 배경색 테두리를 둘러 읽히게 한다 */
+.tagline,
+.best,
+.hint,
+.mission,
+.result .mode,
+.mission-result,
+.start h1 {
+  text-shadow:
+    0 0 0.25em var(--bg),
+    0 0 0.5em var(--bg),
+    0 0 0.8em var(--bg);
+}
+
+/* 배경 그림이 가장 짙은 아래쪽 문구는 반투명 받침을 깐다 */
+.best,
+.hint {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: 0.05em 0.5em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  word-break: keep-all;
+}
+
+/* ---------- 시작 화면 ---------- */
+
+.start h1 {
+  font-size: 2.1em;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.title-hammer {
+  display: inline-block;
+  animation: title-swing 2.4s ease-in-out infinite;
+  transform-origin: 80% 80%;
+}
+
+@keyframes title-swing {
+  0%, 70%, 100% { transform: rotate(0); }
+  78% { transform: rotate(-35deg); }
+  84% { transform: rotate(20deg); }
+}
+
+.tagline {
+  margin-top: -0.4em;
+  font-size: 0.9em;
+  color: var(--muted);
+}
+
+.title-hole {
+  position: relative;
+  width: 6em;
+  aspect-ratio: 1;
+  margin: 0 auto -0.8em;
+  container-type: inline-size;
+}
+
+.title-hole .mole.bob {
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+@keyframes bob {
+  0%, 15% { transform: translateY(105%); }
+  30%, 60% { transform: translateY(0); }
+  75%, 100% { transform: translateY(105%); }
+}
+
+.modes {
+  display: grid;
+  gap: 0.5em;
+}
+
+.best {
+  font-size: 0.85em;
+  color: var(--muted);
+}
+
+.best b {
+  color: var(--fg);
+}
+
+.dex {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 1em;
+  padding: 0.6em;
+}
+
+.dex h2 {
+  font-size: 0.95em;
+  margin-bottom: 0.4em;
+}
+
+.dex h2 small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dex ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35em;
+}
+
+.dex-item {
+  display: grid;
+  gap: 0.1em;
+  width: 100%;
+  padding: 0.35em 0.1em;
+  border: 2px solid transparent;
+  border-radius: 0.6em;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  font-size: 0.68em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+button.dex-item {
+  cursor: pointer;
+  transition: transform 80ms, border-color 120ms;
+}
+
+button.dex-item:hover {
+  border-color: var(--accent);
+}
+
+button.dex-item:active {
+  transform: scale(0.94);
+}
+
+button.dex-item:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dex-item.danger {
+  background: color-mix(in srgb, var(--bad) 14%, var(--bg));
+}
+
+.dex-item small {
+  color: var(--muted);
+}
+
+.dex-item.locked {
+  opacity: 0.55;
+}
+
+.dex-emoji {
+  font-size: 1.9em;
+}
+
+.toggles {
+  display: flex;
+  gap: 0.5em;
+  justify-content: center;
+}
+
+.chip {
+  padding: 0.45em 0.8em;
+  font-size: 0.85em;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.chip[aria-pressed='false'] {
+  color: var(--muted);
+}
+
+.hint {
+  font-size: 0.72em;
+  color: var(--muted);
+}
+
+@media (pointer: coarse) {
+  .hint {
+    display: none;
+  }
+}
+
+@media (orientation: landscape) {
+  .start h1 {
+    font-size: 1.8em;
+  }
+
+  .title-hole {
+    width: 4.6em;
+  }
+}
+
+/* ---------- 게임 화면 ---------- */
+
+/* HUD와 판을 한 덩어리로 세로 가운데에 둔다. 판은 HUD를 뺀 공간에 들어가는 가장 큰 정사각형 */
+.game {
+  --top-h: 6.6em;
+  container-type: size;
+  justify-content: center;
+  transition: background 300ms;
+}
+
+.top {
+  position: relative;
+  width: 100%;
+  max-width: 26em;
+  flex: none;
+}
+
+.hud {
+  display: grid;
+  gap: 0.35em;
+}
+
+.hud-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5em;
+  padding-right: 3.2em;
+}
+
+.stat {
+  position: relative;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 0.75em;
+  padding: 0.2em 0.4em;
+  display: grid;
+}
+
+.stat .label {
+  font-size: 0.65em;
+  color: var(--muted);
+}
+
+.stat b {
+  font-size: 1.35em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.mult {
+  position: absolute;
+  top: 0.2em;
+  right: 0.4em;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 0.75em;
+  color: var(--muted);
+}
+
+.mult[data-level='2'] {
+  color: var(--accent);
+}
+
+.mult[data-level='3'] {
+  color: var(--bad);
+  animation: pulse 600ms ease-in-out infinite;
+}
+
+.bump {
+  animation: bump 180ms ease-out;
+}
+
+@keyframes bump {
+  40% { transform: scale(1.25); }
+}
+
+.timebar,
+.gauge {
+  position: relative;
+  height: 0.5em;
+  border-radius: 99px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.timebar span,
+.gauge span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+}
+
+.timebar span {
+  background: var(--accent);
+  transition: width 100ms linear;
+}
+
+.spurt .timebar span {
+  background: var(--bad);
+}
+
+.gauge {
+  height: 0.75em;
+}
+
+.gauge span {
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  transition: width 150ms;
+}
+
+.gauge em {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.55em;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: 0.2em;
+  color: var(--fg);
+  opacity: 0.6;
+}
+
+.fever .gauge span {
+  background: linear-gradient(90deg, #ff3d3d, var(--gold), #ff3d3d);
+  background-size: 200% 100%;
+  animation: flow 600ms linear infinite;
+}
+
+@keyframes flow {
+  to { background-position: -200% 0; }
+}
+
+.mission {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+.mission b {
+  color: var(--fg);
+}
+
+.mission[data-state='done'] {
+  color: var(--grass-dark);
+  font-weight: 700;
+}
+
+.mission[data-state='done'] b::after {
+  content: ' ✅';
+}
+
+.mission[data-state='failed'] b {
+  color: var(--bad);
+}
+
+.pause-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.7em;
+  height: 2.7em;
+  border-radius: 0.75em;
+}
+
+.stage-wrap {
+  display: contents;
+}
+
+.stage {
+  position: relative;
+  flex: none;
+  width: min(100cqw, 100cqh - 0.5em - var(--top-h));
+  aspect-ratio: 1;
+  border-radius: 1.2em;
+  /* 판에 두께와 그림자를 줘 배경 위로 떠 보이게 한다 */
+  box-shadow:
+    0 0.3em 0 color-mix(in srgb, var(--grass-dark) 70%, black),
+    0 1.4em 2.2em -0.8em rgb(0 0 0 / 0.5),
+    inset 0 0.25em 0.5em rgb(255 255 255 / 0.28),
+    inset 0 -0.6em 1.2em rgb(0 0 0 / 0.18);
+  background:
+    linear-gradient(var(--stage-shade), var(--stage-shade)),
+    radial-gradient(circle at 50% 30%, var(--grass), var(--grass-dark));
+  padding: 4%;
+  display: grid;
+  align-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: box-shadow 200ms, filter 300ms;
+}
+
+@media (pointer: fine) {
+  .stage,
+  .stage .hole {
+    cursor: none;
+  }
+}
+
+.board {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2%;
+  container-type: inline-size;
+}
+
+@media (orientation: landscape) {
+  .game {
+    justify-content: center;
+    gap: 1em;
+  }
+
+  .top {
+    width: 12em;
+    max-width: none;
+    align-self: center;
+  }
+
+  .hud-row {
+    grid-template-columns: 1fr;
+    padding-right: 0;
+  }
+
+  .stat {
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    text-align: right;
+  }
+
+  .stat .label {
+    text-align: left;
+  }
+
+  .mult {
+    position: static;
+    grid-column: 2;
+    margin-top: -0.3em;
+  }
+
+  .pause-btn {
+    position: static;
+    margin-top: 0.6em;
+    width: 100%;
+    height: 2.4em;
+  }
+
+  .stage {
+    width: min(100cqh, 100cqw - 13em);
+  }
+}
+
+/* ---------- 구멍과 두더지 ---------- */
+
+.hole {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  touch-action: manipulation;
+  container-type: inline-size;
+}
+
+/* 구멍 둘레로 솟은 흙 둔덕. 왼쪽 위에서 빛이 들고 땅에 그림자가 진다 */
+.hole::before {
+  content: '';
+  position: absolute;
+  left: 1%;
+  right: 1%;
+  bottom: 3%;
+  height: 42%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 60% 40% at 38% 22%, rgb(255 255 255 / 0.22), transparent 70%),
+    radial-gradient(ellipse at 50% 45%, var(--dirt) 40%, var(--dirt-dark) 100%);
+  box-shadow:
+    0 2.5cqw 3.5cqw -0.5cqw rgb(0 0 0 / 0.35),
+    inset 0 -1.5cqw 2.5cqw rgb(0 0 0 / 0.25);
+  filter: brightness(var(--dirt-dim));
+  pointer-events: none;
+}
+
+/* 구멍 속: 안쪽 벽이 위쪽에서 비치고 바닥으로 갈수록 깊어진다 */
+.pit {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  bottom: 11%;
+  height: 29%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 75%, #000 0 35%, transparent 75%),
+    linear-gradient(color-mix(in srgb, var(--dirt-dark) 70%, var(--pit)), var(--pit) 55%);
+  box-shadow:
+    inset 0 1.8cqw 2.4cqw rgb(0 0 0 / 0.55),
+    0 -1.2cqw 0 -0.2cqw color-mix(in srgb, var(--dirt) 70%, white);
+}
+
+.slot {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  top: 0;
+  bottom: 24%;
+  /* 구멍 아래로만 가리고, 위·옆으로는 장식과 찌그러짐이 삐져나오게 둔다 */
+  clip-path: inset(-60% -40% 0 -40%);
+}
+
+.rim {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 8%;
+  height: 18%;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  /* 앞 테두리: 윗면은 밝게, 옆면은 어둡게, 흙 알갱이를 흩뿌린다 */
+  background:
+    radial-gradient(circle at 22% 62%, rgb(0 0 0 / 0.25) 0 2%, transparent 3%),
+    radial-gradient(circle at 63% 48%, rgb(255 255 255 / 0.2) 0 2%, transparent 3%),
+    radial-gradient(circle at 80% 70%, rgb(0 0 0 / 0.22) 0 2.5%, transparent 3.5%),
+    radial-gradient(circle at 40% 80%, rgb(255 255 255 / 0.15) 0 1.5%, transparent 2.5%),
+    linear-gradient(color-mix(in srgb, var(--dirt) 80%, white) 0 12%, var(--dirt) 30%, var(--dirt-dark));
+  box-shadow: 0 1.2cqw 1.6cqw rgb(0 0 0 / 0.3);
+  pointer-events: none;
+}
+
+.hole.pressed .rim {
+  transform: translateY(2px);
+}
+
+.hole.dust::after {
+  content: '💨';
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  font-size: 22cqw;
+  transform: translateX(-50%);
+  animation: dust 350ms ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes dust {
+  from { opacity: 0.9; transform: translate(-50%, 0) scale(0.6); }
+  to { opacity: 0; transform: translate(-50%, -30%) scale(1.3); }
+}
+
+.mole {
+  --mole-c: var(--mole);
+  position: absolute;
+  inset: 18% 0 0;
+  transform: translateY(105%);
+  transition: transform 130ms cubic-bezier(0.3, 1.4, 0.6, 1);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+.mole.up {
+  transform: translateY(0);
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 30% 30% / 55% 55% 20% 20%;
+  background:
+    /* 맨 위 겹: 구멍 가장자리가 몸 아랫부분에 드리우는 그늘 */
+    linear-gradient(transparent 72%, rgb(0 0 0 / 0.45)),
+    radial-gradient(ellipse 22% 14% at 32% 16%, rgb(255 255 255 / 0.5), transparent 70%),
+    radial-gradient(ellipse 34% 30% at 50% 92%, var(--mole-belly) 0 75%, transparent 100%),
+    radial-gradient(circle at 36% 26%, color-mix(in srgb, var(--mole-c) 65%, white), var(--mole-c) 42%, color-mix(in srgb, var(--mole-c) 55%, black) 100%);
+  box-shadow:
+    inset 1.2cqw 1cqw 1.6cqw rgb(255 255 255 / 0.18),
+    inset -3cqw -2.5cqw 4cqw rgb(0 0 0 / 0.3),
+    0 1.5cqw 2.5cqw rgb(0 0 0 / 0.35);
+}
+
+.ear {
+  position: absolute;
+  top: 2%;
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 58%, #e59a8c 0 30%, color-mix(in srgb, #e59a8c 50%, var(--mole-c)) 40%, transparent 44%),
+    radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--mole-c) 70%, white), var(--mole-c) 50%, color-mix(in srgb, var(--mole-c) 60%, black));
+  box-shadow: 0 0.6cqw 1cqw rgb(0 0 0 / 0.25);
+}
+
+.ear.l { left: 4%; }
+.ear.r { right: 4%; }
+
+.eye {
+  position: absolute;
+  top: 26%;
+  width: 13%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, #fff 0 16%, transparent 19%),
+    radial-gradient(circle at 68% 70%, rgb(255 255 255 / 0.6) 0 7%, transparent 10%),
+    radial-gradient(circle at 45% 40%, #3a2a20, #0d0806 70%);
+  box-shadow: 0 0.5cqw 0 rgb(255 255 255 / 0.25);
+  display: grid;
+  place-items: center;
+}
+
+.eye.l { left: 24%; }
+.eye.r { right: 24%; }
+
+.cheek {
+  position: absolute;
+  top: 42%;
+  width: 14%;
+  aspect-ratio: 1.4;
+  border-radius: 50%;
+  background: #ff8fa3;
+  opacity: 0.5;
+  filter: blur(0.5cqw);
+}
+
+.cheek.l { left: 12%; }
+.cheek.r { right: 12%; }
+
+.nose {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 16%;
+  aspect-ratio: 1.3;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ffd0dc 0 14%, #ff6f91 42%, #c9405f);
+  box-shadow: 0 0.8cqw 1cqw rgb(0 0 0 / 0.3);
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.teeth {
+  position: absolute;
+  top: 51%;
+  left: 50%;
+  width: 14%;
+  height: 10%;
+  background: linear-gradient(90deg, #fff 0 46%, #d9d2c8 48% 52%, #fff 54%), #fff;
+  border-radius: 0 0 3cqw 3cqw;
+  transform: translateX(-50%);
+  box-shadow: inset 0 -1cqw 1cqw rgb(0 0 0 / 0.12), 0 0.5cqw 0.6cqw rgb(0 0 0 / 0.25);
+}
+
+.tongue {
+  position: absolute;
+  top: 54%;
+  left: 50%;
+  width: 14%;
+  height: 0;
+  background: #ff4d6d;
+  border-radius: 0 0 50% 50%;
+  transform: translateX(-50%);
+  transition: height 80ms;
+}
+
+.acc {
+  position: absolute;
+  left: 50%;
+  top: -14%;
+  font-size: 34cqw;
+  line-height: 1;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 1.2cqw 1cqw rgb(0 0 0 / 0.35));
+}
+
+.stars {
+  position: absolute;
+  left: 50%;
+  top: -26%;
+  font-size: 26cqw;
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+/* 종류별 모습 */
+.kind-golden {
+  --mole-c: #f2bd1d;
+  --mole-belly: #fff1a8;
+  filter: drop-shadow(0 0 4cqw rgb(255 215 0 / 0.8));
+}
+
+.kind-golden .acc {
+  top: 6%;
+  left: 82%;
+  font-size: 24cqw;
+  animation: twinkle 500ms ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  to { transform: translateX(-50%) scale(1.3) rotate(20deg); }
+}
+
+.kind-helmet .acc {
+  top: -32%;
+  font-size: 40cqw;
+}
+
+.kind-helmet.helmet-off .acc {
+  animation: fly-off 450ms ease-out forwards;
+}
+
+@keyframes fly-off {
+  to { transform: translate(60%, -120%) rotate(200deg); opacity: 0; }
+}
+
+.kind-swift {
+  --mole-c: #7b6b8f;
+}
+
+.kind-swift .acc {
+  top: 30%;
+  left: -6%;
+  font-size: 26cqw;
+}
+
+.kind-swift .eye {
+  border-radius: 50% 50% 40% 40%;
+  height: 9%;
+  aspect-ratio: auto;
+}
+
+/* 폭탄 두더지: 한눈에 "치면 안 된다"가 보이도록 검붉은 몸, 빛나는 눈, 송곳니, 붉은 기운 */
+.kind-bomb {
+  --mole-c: #2b2224;
+  --mole-belly: #4a2a2a;
+  animation: menace 600ms ease-in-out infinite alternate;
+}
+
+@keyframes menace {
+  from { filter: drop-shadow(0 0 2cqw rgb(255 40 40 / 0.45)); }
+  to { filter: drop-shadow(0 0 6cqw rgb(255 40 40 / 0.9)); }
+}
+
+.kind-bomb .body {
+  box-shadow:
+    inset -6cqw -4cqw 0 rgb(0 0 0 / 0.35),
+    inset 0 0 0 1.2cqw rgb(255 50 50 / 0.55);
+  animation: tremble 110ms linear infinite;
+}
+
+@keyframes tremble {
+  25% { translate: -1.2% 0; }
+  75% { translate: 1.2% 0; }
+}
+
+.kind-bomb .ear {
+  background: #3a2a2c;
+  box-shadow: inset 0 0 0 2cqw rgb(255 50 50 / 0.35);
+}
+
+.kind-bomb .ear.l {
+  border-radius: 100% 0 60% 30%;
+}
+
+.kind-bomb .ear.r {
+  border-radius: 0 100% 30% 60%;
+}
+
+.kind-bomb .eye {
+  top: 30%;
+  width: 15%;
+  aspect-ratio: 1.3;
+  background: radial-gradient(circle at 50% 55%, #fff6a0 0 18%, #ff2a2a 22% 60%, #8a0000 62%);
+  box-shadow: 0 0 3cqw #ff2a2a;
+}
+
+.kind-bomb .eye::after {
+  content: '';
+  position: absolute;
+  left: -30%;
+  top: -55%;
+  width: 160%;
+  height: 34%;
+  border-radius: 2cqw;
+  background: #120c0c;
+  transform: rotate(var(--brow, 24deg));
+}
+
+.kind-bomb .eye.r::after {
+  --brow: -24deg;
+}
+
+.kind-bomb .cheek {
+  display: none;
+}
+
+.kind-bomb .nose {
+  background: #6e0d0d;
+  width: 12%;
+}
+
+.kind-bomb .tongue {
+  top: 50%;
+  width: 40%;
+  height: 13%;
+  background: #1a0505;
+  border-radius: 1cqw 1cqw 50% 50%;
+}
+
+.kind-bomb .teeth {
+  z-index: 1;
+  top: 50%;
+  width: 40%;
+  height: 8%;
+  border-radius: 0;
+  box-shadow: none;
+  clip-path: polygon(0 0, 100% 0, 87.5% 100%, 75% 0, 62.5% 100%, 50% 0, 37.5% 100%, 25% 0, 12.5% 100%);
+}
+
+.kind-bomb .acc {
+  top: 30%;
+  left: 102%;
+  font-size: 40cqw;
+  animation: fuse 260ms ease-in-out infinite alternate;
+}
+
+.kind-bomb .acc::after {
+  content: '✸';
+  position: absolute;
+  right: -6%;
+  top: -18%;
+  font-size: 40%;
+  color: #ffd23f;
+  text-shadow: 0 0 2cqw #ff8a00;
+  animation: spark 120ms steps(2) infinite;
+}
+
+@keyframes fuse {
+  to { transform: translateX(-50%) rotate(-14deg) scale(1.1); }
+}
+
+@keyframes spark {
+  50% { opacity: 0.3; transform: scale(1.5) rotate(45deg); }
+}
+
+/* 폭탄이 올라온 구멍은 붉게 달아오른다 */
+.hole:has(.kind-bomb.up) .pit {
+  box-shadow:
+    inset 0 1.8cqw 2.4cqw rgb(0 0 0 / 0.55),
+    0 -1.2cqw 0 -0.2cqw color-mix(in srgb, var(--dirt) 70%, white),
+    0 0 6cqw 1.5cqw rgb(255 40 40 / 0.7);
+}
+
+.kind-clock {
+  --mole-c: #9b6b43;
+}
+
+.kind-clock .acc {
+  top: 46%;
+  left: 90%;
+  font-size: 28cqw;
+}
+
+.kind-ice {
+  --mole-c: #8fd0f2;
+  --mole-belly: #e2f5ff;
+}
+
+.kind-ice .acc {
+  top: -24%;
+  font-size: 26cqw;
+}
+
+.kind-king {
+  --mole-c: #7b4a2a;
+  inset: 8% -6% 0;
+}
+
+.kind-king .acc {
+  top: -38%;
+  font-size: 34cqw;
+}
+
+.kind-king.ouch .eye {
+  border-radius: 0;
+  height: 4%;
+  aspect-ratio: auto;
+  top: 30%;
+}
+
+/* 상태 */
+.mole.ouch {
+  animation: ouch 140ms ease-out;
+}
+
+@keyframes ouch {
+  40% { transform: translateY(6%) scale(1.1, 0.85); }
+}
+
+.mole.whacked.up {
+  transform: translateY(10%) scale(1.12, 0.75);
+  transition-duration: 60ms;
+}
+
+.mole.whacked .eye {
+  background: none;
+  box-shadow: none;
+  color: #1b1410;
+  font-size: 16cqw;
+  font-weight: 900;
+}
+
+.mole.whacked .eye::before {
+  content: '✕';
+  line-height: 1;
+}
+
+.mole.whacked .eye::after {
+  display: none;
+}
+
+.mole.whacked .stars {
+  opacity: 1;
+  animation: spin-stars 300ms linear;
+}
+
+@keyframes spin-stars {
+  from { transform: translateX(-50%) rotate(-90deg) scale(0.5); }
+}
+
+.mole.tease .tongue {
+  height: 14%;
+}
+
+.mole.tease .eye.r {
+  height: 4%;
+  aspect-ratio: auto;
+  top: 30%;
+}
+
+.mole.boom {
+  transform: translateY(0) scale(1.3);
+  opacity: 0;
+  filter: brightness(3);
+  transition: transform 200ms, opacity 300ms, filter 100ms;
+}
+
+/* ---------- 연출 ---------- */
+
+.popup {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  z-index: 5;
+  font-size: 1.3em;
+  font-weight: 900;
+  color: #fff;
+  -webkit-text-stroke: 1px #2b2118;
+  paint-order: stroke fill;
+  text-shadow: 0 2px 0 #2b2118;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: rise 700ms ease-out forwards;
+}
+
+.popup.gold { color: var(--gold); font-size: 1.6em; }
+.popup.fever { color: #ffb347; }
+.popup.bad { color: var(--bad); }
+.popup.time { color: #7cf29a; top: 30%; }
+.popup.ice { color: var(--ice); top: 30%; font-size: 1em; }
+.popup.clink { color: #d0e4ff; }
+.popup.king { color: var(--gold); font-size: 1.8em; }
+
+@keyframes rise {
+  0% { transform: translate(-50%, 0.6em) scale(0.6); opacity: 0; }
+  20% { transform: translate(-50%, -0.4em) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -2.2em) scale(1); opacity: 0; }
+}
+
+.particle {
+  position: absolute;
+  left: 50%;
+  top: 35%;
+  z-index: 4;
+  font-size: 1em;
+  pointer-events: none;
+  animation: burst 500ms ease-out forwards;
+}
+
+@keyframes burst {
+  from { transform: translate(-50%, 0) scale(0.5); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--dx)), var(--dy)) scale(1.1); opacity: 0; }
+}
+
+.banners {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.banner {
+  max-width: 100%;
+  font-size: 2em;
+  font-weight: 900;
+  color: #fff;
+  -webkit-text-stroke: 2px #2b2118;
+  paint-order: stroke fill;
+  text-shadow: 0 0.12em 0 #2b2118;
+  animation: banner 1000ms ease-out forwards;
+  white-space: nowrap;
+}
+
+.banner.combo { color: var(--gold); }
+.banner.fever { color: #ff9a3d; font-size: 2.3em; }
+.banner.spurt { color: #ff5d5d; font-size: 1.6em; }
+.banner.king { color: var(--gold); font-size: 1.6em; }
+.banner.break { color: #c8c8c8; font-size: 1.2em; }
+
+@keyframes banner {
+  0% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+  15% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+  25% { transform: scale(1) rotate(0); }
+  80% { opacity: 1; }
+  100% { transform: translateY(-0.6em); opacity: 0; }
+}
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgb(0 0 0 / 0.25);
+  color: #fff;
+  font-size: 5em;
+  font-weight: 900;
+  -webkit-text-stroke: 3px #2b2118;
+  paint-order: stroke fill;
+  text-shadow: 0 0.08em 0 #2b2118;
+}
+
+.countdown[hidden],
+.pause-menu[hidden] {
+  display: none;
+}
+
+.countdown.pop {
+  animation: count-pop 400ms ease-out;
+}
+
+@keyframes count-pop {
+  from { transform: scale(1.6); opacity: 0.3; }
+}
+
+.pause-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  align-content: center;
+  gap: 0.6em;
+  padding: 0 18%;
+  border-radius: inherit;
+  background: rgb(20 14 8 / 0.75);
+  color: #fff;
+}
+
+.pause-menu h2 {
+  font-size: 1.4em;
+}
+
+.pause-menu .btn:not(.primary) {
+  color: var(--fg);
+}
+
+.pause-menu .btn.ghost {
+  color: #fff;
+}
+
+.hammer {
+  position: absolute;
+  z-index: 9;
+  font-size: 3em;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-25%, -75%) rotate(-25deg);
+  transform-origin: 75% 85%;
+  transition: opacity 80ms;
+}
+
+.hammer.visible {
+  opacity: 1;
+}
+
+.hammer.swing {
+  animation: swing 150ms ease-out;
+}
+
+@keyframes swing {
+  40% { transform: translate(-25%, -75%) rotate(40deg); }
+}
+
+.hammer.stunned {
+  animation: stunned 300ms ease-in-out;
+  filter: grayscale(1);
+}
+
+@keyframes stunned {
+  25% { transform: translate(-25%, -75%) rotate(-10deg); }
+  50% { transform: translate(-25%, -75%) rotate(-40deg); }
+  75% { transform: translate(-25%, -75%) rotate(-15deg); }
+}
+
+.fever .hammer {
+  filter: drop-shadow(0 0 6px #ff7a00) drop-shadow(0 0 12px #ff3d00);
+}
+
+.fever .hammer::after {
+  content: '🔥';
+  position: absolute;
+  left: -30%;
+  top: -40%;
+  font-size: 0.6em;
+}
+
+.shake-small {
+  animation: shake 160ms ease-in-out;
+}
+
+.shake-big {
+  animation: shake-big 320ms ease-in-out;
+}
+
+@keyframes shake {
+  25% { transform: translate(-1%, 0.6%); }
+  50% { transform: translate(1%, -0.6%); }
+  75% { transform: translate(-0.6%, -0.3%); }
+}
+
+@keyframes shake-big {
+  15% { transform: translate(-3%, 2%) rotate(-1deg); }
+  30% { transform: translate(2.6%, -2%) rotate(1deg); }
+  45% { transform: translate(-2%, 1.2%); }
+  60% { transform: translate(1.6%, -1%); }
+  80% { transform: translate(-0.8%, 0.3%); }
+}
+
+/* 피버 · 라스트 스퍼트 · 얼음 */
+.game.fever {
+  background: linear-gradient(135deg, rgb(255 140 0 / 0.25), rgb(255 60 60 / 0.25), rgb(255 200 0 / 0.25));
+  background-size: 300% 300%;
+  animation: fever-bg 1.2s ease infinite;
+}
+
+@keyframes fever-bg {
+  50% { background-position: 100% 100%; }
+}
+
+.fever .stage {
+  box-shadow: 0 0 0 0.25em var(--gold), 0 0 1.8em rgb(255 140 0 / 0.7);
+}
+
+.spurt:not(.fever) .stage {
+  animation: spurt 700ms ease-in-out infinite;
+}
+
+@keyframes spurt {
+  50% { box-shadow: 0 0 0 0.3em var(--bad), 0 0 1.5em rgb(229 72 77 / 0.6); }
+}
+
+.frozen .stage {
+  filter: saturate(0.6) hue-rotate(160deg) brightness(1.1);
+}
+
+.frozen .stage::after {
+  content: '❄️';
+  position: absolute;
+  top: 0.4em;
+  left: 0.6em;
+  font-size: 1.6em;
+  animation: pulse 500ms ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% { transform: scale(1.2); }
+}
+
+/* ---------- 결과 화면 ---------- */
+
+.result .col {
+  align-items: center;
+}
+
+.result .side-col {
+  align-items: stretch;
+}
+
+.result .mode {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+.grade {
+  font-size: 4.6em;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--accent);
+  -webkit-text-stroke: 3px #2b2118;
+  paint-order: stroke fill;
+  text-shadow: 0 0.06em 0 #2b2118;
+  animation: stamp 500ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.grade-S .grade { color: var(--gold); }
+.grade-B .grade { color: var(--ice); }
+.grade-C .grade { color: var(--muted); }
+
+@keyframes stamp {
+  from { transform: scale(3) rotate(-20deg); opacity: 0; }
+}
+
+.result .stars {
+  position: static;
+  opacity: 1;
+  transform: none;
+  font-size: 1.8em;
+  display: flex;
+  justify-content: center;
+  gap: 0.2em;
+}
+
+.result .stars span {
+  animation: star-in 400ms backwards;
+  animation-delay: calc(500ms + var(--i) * 200ms);
+}
+
+.result .stars span:not(.on) {
+  opacity: 0.4;
+}
+
+@keyframes star-in {
+  from { transform: scale(0) rotate(-180deg); }
+}
+
+.final {
+  font-size: 1.1em;
+  line-height: 1.1;
+}
+
+.final b {
+  font-size: 2.4em;
+  font-variant-numeric: tabular-nums;
+}
+
+.record {
+  font-weight: 900;
+  font-size: 1.2em;
+  color: var(--accent);
+  animation: pulse 700ms ease-in-out infinite;
+}
+
+.goal {
+  padding: 0.45em 0.7em;
+  border-radius: 0.75em;
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  font-size: 0.9em;
+  font-weight: 700;
+}
+
+.numbers {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35em;
+}
+
+.numbers div {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 0.75em;
+  padding: 0.3em 0.1em;
+}
+
+.numbers dt {
+  font-size: 0.65em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.numbers dd {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.1em;
+}
+
+.mission-result {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+.mission-result.done {
+  color: var(--grass-dark);
+  font-weight: 700;
+}
+
+.kills {
+  list-style: none;
+  margin: 0;
+  padding: 0.4em 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35em;
+}
+
+.kills li {
+  position: relative;
+  padding: 0.15em 0.55em;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  font-size: 0.95em;
+}
+
+.kills li.bad {
+  border-color: var(--bad);
+}
+
+.kills b {
+  font-size: 0.85em;
+  margin-left: 0.1em;
+}
+
+.kills em {
+  position: absolute;
+  top: -0.7em;
+  right: -0.5em;
+  padding: 0 0.3em;
+  border-radius: 0.4em;
+  background: var(--bad);
+  color: #fff;
+  font-size: 0.55em;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+  margin-top: 0.2em;
+}
+
+.actions .primary {
+  grid-column: 1 / -1;
+}
+
+.toast {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.3em;
+  font-size: 0.8em;
+  color: var(--grass-dark);
+  pointer-events: none;
+}
+
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.confetti {
+  position: absolute;
+  top: -12px;
+  width: 0.5em;
+  height: 0.9em;
+  border-radius: 2px;
+  animation: confetti 1.8s ease-in forwards;
+}
+
+@keyframes confetti {
+  to { transform: translate(var(--drift), 100cqh) rotate(var(--spin)); }
+}
+
+@media (orientation: landscape) {
+  .grade {
+    font-size: 4.2em;
+  }
+}
+
+/* ---------- 스킨 장식 ---------- */
+
+.pit,
+.rim {
+  filter: brightness(var(--dirt-dim));
+}
+
+.deco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.deco span {
+  position: absolute;
+  font-size: 1.05em;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.deco span::before {
+  content: var(--d);
+}
+
+.deco span:nth-child(1) { --d: var(--d1); left: 1.5%; top: 1%; }
+.deco span:nth-child(2) { --d: var(--d2); left: 47%; top: 0.5%; }
+.deco span:nth-child(3) { --d: var(--d3); right: 1.5%; top: 1.5%; }
+.deco span:nth-child(4) { --d: var(--d4); left: 0.5%; top: 47%; }
+.deco span:nth-child(5) { --d: var(--d5); right: 0.5%; top: 40%; }
+.deco span:nth-child(6) { --d: var(--d6); left: 2%; bottom: 1%; }
+.deco span:nth-child(7) { --d: var(--d7); left: 48%; bottom: 0.5%; }
+.deco span:nth-child(8) { --d: var(--d8); right: 2%; bottom: 1.5%; }
+
+/* ---------- 시작 화면 모서리: 언어(좌상단) · 설정(우상단) ---------- */
+
+.start {
+  padding-top: 3.2em;
+}
+
+.corner {
+  position: absolute;
+  top: 0.6em;
+  z-index: 5;
+}
+
+.corner.left {
+  left: 0.6em;
+}
+
+.corner.right {
+  right: 0.6em;
+}
+
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.seg button {
+  flex: 1;
+  padding: 0.4em 0.8em;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.seg button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 700;
+}
+
+.seg button:focus-visible,
+.skins button:focus-visible,
+.icon-btn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 2.3em;
+  height: 2.3em;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  font: inherit;
+  font-size: 1em;
+  cursor: pointer;
+  transition: transform 200ms;
+}
+
+.icon-btn:hover {
+  transform: rotate(45deg);
+}
+
+@media (orientation: landscape) {
+  .start {
+    padding-top: 2.6em;
+  }
+
+  .start .title-hole {
+    width: 3.8em;
+  }
+}
+
+/* ---------- 대화상자: 도감 설명 · 설정 ---------- */
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1em;
+  background: rgb(20 14 8 / 0.55);
+  animation: fade-in 150ms ease-out;
+}
+
+.modal {
+  width: min(100%, 21em);
+  max-height: 100%;
+  overflow: hidden;
+  padding: 1em;
+  border: 2px solid var(--border);
+  border-radius: 1.2em;
+  background: var(--surface);
+  color: var(--fg);
+  text-align: center;
+  box-shadow: 0 0.6em 2em rgb(0 0 0 / 0.3);
+  animation: pop-in 220ms cubic-bezier(0.3, 1.5, 0.6, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes pop-in {
+  from { transform: scale(0.85); opacity: 0; }
+}
+
+.modal h2 {
+  font-size: 1.2em;
+}
+
+.modal .btn {
+  font-size: 0.95em;
+}
+
+.dex-detail {
+  display: grid;
+  gap: 0.6em;
+}
+
+.detail-hole {
+  position: relative;
+  width: 6.5em;
+  aspect-ratio: 1;
+  margin: -0.4em auto -1em;
+  container-type: inline-size;
+}
+
+.detail-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35em;
+}
+
+.detail-stats div {
+  padding: 0.3em 0.1em;
+  border-radius: 0.7em;
+  background: var(--bg);
+}
+
+.detail-stats dt {
+  font-size: 0.65em;
+  color: var(--muted);
+}
+
+.detail-stats dd {
+  margin: 0;
+  font-size: 0.95em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dex-detail.danger .detail-stats dd:first-child,
+.dex-detail.danger h2 {
+  color: var(--bad);
+}
+
+.detail-desc {
+  font-size: 0.88em;
+  line-height: 1.45;
+  text-align: left;
+  word-break: keep-all;
+}
+
+.detail-count {
+  font-size: 0.78em;
+  color: var(--muted);
+}
+
+.settings {
+  display: grid;
+  gap: 0.7em;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 0.7em;
+  text-align: left;
+}
+
+.settings h3 {
+  margin: 0 0 0.3em;
+  font-size: 0.75em;
+  color: var(--muted);
+}
+
+.settings .seg {
+  display: flex;
+  width: 100%;
+}
+
+.skins {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.3em;
+}
+
+.skins button {
+  display: grid;
+  justify-items: center;
+  gap: 0.1em;
+  padding: 0.35em 0.1em;
+  border: 2px solid var(--border);
+  border-radius: 0.7em;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  font-size: 0.72em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.skins button span {
+  font-size: 1.6em;
+}
+
+.skins button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  font-weight: 700;
+}
+
+.settings .note {
+  margin-top: 0.3em;
+  font-size: 0.7em;
+  color: var(--muted);
+}
+
+.reset-section .btn {
+  margin-top: 0.4em;
+}
+
+.btn.danger {
+  background: var(--bad);
+  border-color: #b8323a;
+  color: #fff;
+  box-shadow: 0 0.25em 0 #8f2329;
+}
+
+.confirm p {
+  margin-top: 0.4em;
+  font-size: 0.8em;
+  font-weight: 700;
+  color: var(--bad);
+}
+
+.confirm .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4em;
+}
+
+@media (orientation: landscape) {
+  .modal {
+    width: min(100%, 30em);
+  }
+
+  .dex-detail {
+    grid-template-columns: 7em 1fr;
+    column-gap: 1em;
+    align-items: center;
+    text-align: left;
+  }
+
+  .detail-hole {
+    grid-row: span 5;
+    margin: 0;
+    width: 7em;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1.2em;
+  }
+}
+
+/* ---------- 움직이는 배경 ---------- */
+
+.scene {
+  --px: 0;
+  --py: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scene-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--sky-top), var(--sky-bottom) 70%);
+  transition: background 400ms;
+}
+
+.scene-stars {
+  position: absolute;
+  inset: 0;
+  opacity: var(--night);
+  transition: opacity 400ms;
+}
+
+.star {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 4px #fff;
+  animation: twinkle-star 3s ease-in-out var(--delay) infinite alternate;
+}
+
+@keyframes twinkle-star {
+  from { opacity: 0.2; }
+}
+
+/* 겹마다 포인터를 따라 밀리는 거리가 달라 깊이감이 생긴다 */
+.scene-depth {
+  position: absolute;
+  left: -5vw;
+  right: -5vw;
+  bottom: var(--bottom, 0);
+  height: var(--h, 100%);
+  transform: translate3d(calc(var(--px) * var(--depth)), calc(var(--py) * var(--depth) * 0.5), 0);
+  transition: transform 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.scene-depth.far { --h: 50vh; --depth: -8px; --dur: 160s; }
+.scene-depth.mid { --h: 36vh; --depth: -18px; --dur: 90s; }
+.scene-depth.near { --h: 22vh; --depth: -32px; --dur: 50s; bottom: -1vh; }
+.scene-depth.sun-wrap { --depth: -4px; top: 0; height: auto; }
+.scene-depth.clouds { --depth: -6px; top: 0; height: auto; }
+
+/* 타일 하나(높이의 3배 너비)만큼 흘렀다가 처음으로 돌아가 끊김 없이 이어진다 */
+.scene-strip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--h) * 3 + 115vw);
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  animation: strip var(--dur) linear infinite;
+  will-change: transform;
+}
+
+@keyframes strip {
+  to { transform: translateX(calc(var(--h) * -3)); }
+}
+
+.scene-sun {
+  position: absolute;
+  right: 14%;
+  top: 9%;
+  width: 15vmin;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--sun) 58%, transparent 72%);
+  box-shadow: 0 0 9vmin 2vmin var(--sun-glow);
+  animation: sun-breathe 6s ease-in-out infinite alternate;
+}
+
+@keyframes sun-breathe {
+  to { box-shadow: 0 0 12vmin 3vmin var(--sun-glow); }
+}
+
+.cloud {
+  position: absolute;
+  top: var(--top);
+  left: 0;
+  width: calc(8rem * var(--size));
+  height: calc(2.4rem * var(--size));
+  border-radius: 999px;
+  background: var(--cloud);
+  opacity: 0.9;
+  animation: cloud var(--dur) linear var(--delay) infinite;
+}
+
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: inherit;
+}
+
+.cloud::before {
+  left: 18%;
+  bottom: 30%;
+  width: 40%;
+  aspect-ratio: 1;
+}
+
+.cloud::after {
+  left: 46%;
+  bottom: 22%;
+  width: 32%;
+  aspect-ratio: 1;
+}
+
+@keyframes cloud {
+  from { transform: translateX(-12rem); }
+  to { transform: translateX(calc(100vw + 2rem)); }
+}
+
+/* 밤 그늘: 땅과 언덕을 어둡게 하고 하늘 위쪽은 별이 보이게 둔다 */
+.scene-night {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 25%, rgb(4 8 24 / 0.6) 70%);
+  opacity: var(--night);
+  transition: opacity 400ms;
+}
+
+.scene-particles {
+  position: absolute;
+  inset: 0;
+}
+
+.particle-bg {
+  position: absolute;
+  left: var(--x);
+  top: -4%;
+  width: calc(0.55rem * var(--size));
+  aspect-ratio: 1;
+  background: var(--particle);
+  animation: fall var(--dur) linear var(--delay) infinite;
+}
+
+/* 정원: 꽃잎이 흔들리며 떨어진다 */
+:root[data-skin='garden'] .particle-bg {
+  border-radius: 80% 0 80% 0;
+  opacity: 0.85;
+}
+
+@keyframes fall {
+  0% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(3vw, 27vh) rotate(90deg); }
+  50% { transform: translate(-2vw, 54vh) rotate(180deg); }
+  75% { transform: translate(4vw, 81vh) rotate(270deg); }
+  100% { transform: translate(0, 112vh) rotate(360deg); }
+}
+
+/* 설산: 눈송이 */
+:root[data-skin='snow'] .particle-bg {
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgb(255 255 255 / 0.9);
+  opacity: 0.9;
+}
+
+/* 사막: 모래바람이 옆으로 흩날린다 */
+:root[data-skin='desert'] .particle-bg {
+  top: calc(40% + var(--y) * 0.55);
+  left: 0;
+  width: calc(1.6rem * var(--size));
+  height: 2px;
+  aspect-ratio: auto;
+  border-radius: 2px;
+  opacity: 0.7;
+  animation-name: dust;
+  animation-duration: calc(var(--dur) * 0.5);
+}
+
+@keyframes dust {
+  from { transform: translateX(-10vw); }
+  to { transform: translateX(110vw) translateY(-4vh); }
+}
+
+/* 밀림: 반딧불이 떠다니며 깜빡인다 */
+:root[data-skin='jungle'] .particle-bg {
+  top: calc(25% + var(--y) * 0.7);
+  width: calc(0.35rem * var(--size));
+  border-radius: 50%;
+  box-shadow: 0 0 8px 3px rgb(255 240 120 / 0.8);
+  animation-name: firefly;
+  animation-timing-function: ease-in-out;
+  animation-direction: alternate;
+}
+
+@keyframes firefly {
+  0% { transform: translate(0, 0); opacity: 0.1; }
+  30% { opacity: 1; }
+  50% { transform: translate(4vw, -5vh); opacity: 0.4; }
+  80% { opacity: 1; }
+  100% { transform: translate(-3vw, -9vh); opacity: 0.2; }
+}
+
+@media (prefers-color-scheme: dark) {
+  /* 밤에는 해 대신 초승달 */
+  :root:not([data-theme='light']) .scene-sun {
+    width: 9vmin;
+    background: transparent;
+    box-shadow: inset -2.6vmin 1.4vmin 0 0 #f3efd8, -1vmin 0.5vmin 5vmin -1vmin rgb(240 235 200 / 0.35);
+    animation: none;
+  }
+}
+
+:root[data-theme='dark'] .scene-sun {
+  width: 9vmin;
+  background: transparent;
+  box-shadow: inset -2.6vmin 1.4vmin 0 0 #f3efd8, -1vmin 0.5vmin 5vmin -1vmin rgb(240 235 200 / 0.35);
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-strip,
+  .cloud,
+  .particle-bg,
+  .star,
+  .scene-sun {
+    animation: none;
+  }
+
+  .particle-bg {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .title-hammer,
+  .title-hole .mole.bob,
+  .game.fever,
+  .spurt .stage,
+  .confetti {
+    animation: none;
+  }
+}
