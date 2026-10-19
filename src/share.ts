@@ -12,7 +12,7 @@ export function shareText(result: GameResult, opts: { date: Date; daily: boolean
   if (stats.bombs > 0) kills.push(`${MOLES.bomb.emoji}×${stats.bombs}`);
 
   return [
-    `Project Hammer 🔨 ${date}${opts.daily ? t('share.daily') : ''}`,
+    `${t('app.title')} 🔨 ${date}${opts.daily ? t('share.daily') : ''}`,
     `${stars}  ${t('share.score', { g: result.grade, n: result.score })}`,
     kills.join(' ') || t('share.empty'),
     `${t('share.combo', { n: stats.maxCombo })}${stats.maxCombo >= 15 ? ' 🔥' : ''}`,

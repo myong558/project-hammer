@@ -2,16 +2,13 @@ import { HOLES } from '../game/engine';
 import { MOLES } from '../game/moles';
 import type { Mole, MoleKind } from '../game/types';
 import { moleName, t } from '../i18n';
+import { ACCESSORY_ART, DIZZY, holeArt } from './icons';
 
-const ACCESSORY: Partial<Record<MoleKind, string>> = {
-  golden: '✨',
-  helmet: '⛑️',
-  swift: '💨',
-  bomb: '💣',
-  clock: '⏰',
-  ice: '🧊',
-  king: '👑',
-};
+/** 구멍 하나의 그림: 뒤(둔덕·구멍 속) · 두더지 자리 · 앞 테두리 */
+export function holeInner(seed = 0): string {
+  const { back, front } = holeArt(seed);
+  return `${back}<span class="slot"></span>${front}`;
+}
 
 /** 두더지 한 마리의 DOM. 시작 화면 장식에도 쓴다 */
 export function createMoleEl(kind: MoleKind): HTMLElement {
@@ -20,12 +17,13 @@ export function createMoleEl(kind: MoleKind): HTMLElement {
   el.innerHTML = `
     <div class="body">
       <span class="ear l"></span><span class="ear r"></span>
+      <span class="brow l"></span><span class="brow r"></span>
       <span class="eye l"></span><span class="eye r"></span>
       <span class="cheek l"></span><span class="cheek r"></span>
-      <span class="nose"></span><span class="teeth"></span><span class="tongue"></span>
+      <span class="mouth"></span><span class="tongue"></span><span class="teeth"></span><span class="nose"></span>
     </div>
-    ${ACCESSORY[kind] ? `<span class="acc">${ACCESSORY[kind]}</span>` : ''}
-    <span class="stars">💫</span>`;
+    ${ACCESSORY_ART[kind] ? `<span class="acc">${ACCESSORY_ART[kind]}</span>` : ''}
+    <span class="stars">${DIZZY}</span>`;
   return el;
 }
 
@@ -42,7 +40,7 @@ export class Board {
       const hole = document.createElement('button');
       hole.type = 'button';
       hole.className = 'hole';
-      hole.innerHTML = '<span class="pit"></span><span class="slot"></span><span class="rim"></span>';
+      hole.innerHTML = holeInner(i + 1);
       hole.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         onHit(i, e);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COUNTDOWN, DURATION, Game } from '../src/game/engine';
+import { COUNTDOWN, DURATION, GOLDEN_PITY, Game } from '../src/game/engine';
 import { FEVER_COMBO } from '../src/game/scoring';
 import { SEGMENTS, neighbors, pickKind, segmentIndexAt } from '../src/game/spawner';
 import type { GameEvent } from '../src/game/types';
@@ -175,6 +175,18 @@ describe('Game', () => {
     for (let t = 0; t < DURATION; t += 50) game.tick(50);
     expect(kings).toBe(1);
     expect(events.some((e) => e.type === 'segment' && e.id === 'spurt')).toBe(true);
+  });
+
+  it(`황금 두더지가 ${GOLDEN_PITY}번 연달아 안 나오면 다음은 반드시 황금`, () => {
+    // 난수 0이면 가중치 첫 항목(보통 두더지)만 뽑힌다
+    const { game } = playingGame(seq(0));
+    const kinds: string[] = [];
+    game.on((e) => {
+      if (e.type === 'spawn') kinds.push(e.mole.kind);
+    });
+    for (let t = 0; t < 12_000 && kinds.length <= GOLDEN_PITY; t += 50) game.tick(50);
+    expect(kinds.slice(0, GOLDEN_PITY).every((k) => k === 'normal')).toBe(true);
+    expect(kinds[GOLDEN_PITY]).toBe('golden');
   });
 
   it('같은 시드면 같은 판이 나온다', () => {

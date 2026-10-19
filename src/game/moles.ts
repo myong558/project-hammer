@@ -17,7 +17,7 @@ export interface MoleDef {
 
 export const MOLES: Record<MoleKind, MoleDef> = {
   normal: { kind: 'normal', emoji: '🐹', points: 10, hp: 1, exposure: 1, good: true },
-  golden: { kind: 'golden', emoji: '⭐', points: 30, hp: 1, exposure: 0.5, good: true },
+  golden: { kind: 'golden', emoji: '⭐', points: 30, hp: 1, exposure: 0.65, good: true },
   helmet: { kind: 'helmet', emoji: '⛑️', points: 25, hp: 2, exposure: 1.4, good: true },
   swift: { kind: 'swift', emoji: '💨', points: 20, hp: 1, exposure: 0.8, good: true },
   bomb: { kind: 'bomb', emoji: '💣', points: -20, hp: 1, exposure: 1.2, good: false },

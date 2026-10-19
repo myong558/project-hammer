@@ -13,15 +13,15 @@ export interface Segment {
 }
 
 export const SEGMENTS: Segment[] = [
-  { id: 'warmup', until: 5_000, interval: 900, exposure: 1_100, maxActive: 1, weights: { normal: 85, golden: 15 } },
-  { id: 'main', until: 10_000, interval: 800, exposure: 1_000, maxActive: 2, weights: { normal: 70, golden: 10, bomb: 20 } },
+  { id: 'warmup', until: 5_000, interval: 900, exposure: 1_100, maxActive: 1, weights: { normal: 80, golden: 20 } },
+  { id: 'main', until: 10_000, interval: 800, exposure: 1_000, maxActive: 2, weights: { normal: 66, golden: 14, bomb: 20 } },
   {
     id: 'melee',
     until: 20_000,
     interval: 650,
     exposure: 850,
     maxActive: 2,
-    weights: { normal: 45, golden: 8, bomb: 17, helmet: 12, swift: 10, clock: 4, ice: 4 },
+    weights: { normal: 41, golden: 12, bomb: 17, helmet: 12, swift: 10, clock: 4, ice: 4 },
   },
   {
     id: 'rush',
@@ -29,7 +29,7 @@ export const SEGMENTS: Segment[] = [
     interval: 500,
     exposure: 650,
     maxActive: 3,
-    weights: { normal: 38, golden: 8, bomb: 27, helmet: 10, swift: 10, clock: 3, ice: 4 },
+    weights: { normal: 35, golden: 11, bomb: 27, helmet: 10, swift: 10, clock: 3, ice: 4 },
   },
   {
     id: 'spurt',
@@ -37,7 +37,7 @@ export const SEGMENTS: Segment[] = [
     interval: 450,
     exposure: 600,
     maxActive: 3,
-    weights: { normal: 45, golden: 10, bomb: 25, helmet: 10, swift: 10 },
+    weights: { normal: 42, golden: 13, bomb: 25, helmet: 10, swift: 10 },
   },
 ];
 
@@ -48,7 +48,7 @@ export const FEVER_SEGMENT: Segment = {
   interval: 220,
   exposure: 900,
   maxActive: 4,
-  weights: { normal: 85, golden: 15 },
+  weights: { normal: 75, golden: 25 },
 };
 
 export function segmentIndexAt(progress: number): number {

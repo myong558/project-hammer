@@ -25,6 +25,8 @@ const WHIFF_STUN = 300;
 const HOLE_COOLDOWN = 300;
 const TIME_BONUS = 3_000;
 const MAX_CLOCKS = 2;
+/** 황금 두더지가 이만큼 연달아 안 나오면 다음은 반드시 황금 */
+export const GOLDEN_PITY = 7;
 const SLOW_DURATION = 2_000;
 const SLOW_FACTOR = 1.6;
 const FREEZE_EXTEND = 1_000;
@@ -69,6 +71,7 @@ export class Game {
   private nextId = 1;
   private clocks = 0;
   private kingSpawned = false;
+  private sinceGolden = 0;
   private bannerIndex = -1;
 
   constructor(rng: Rng) {
@@ -239,7 +242,9 @@ export class Game {
     const active = this.moles.filter((m) => m.kind !== 'king').length;
     if (active >= seg.maxActive) return;
     const exclude: MoleKind[] = this.clocks >= MAX_CLOCKS ? ['clock'] : [];
-    this.spawn(pickKind(seg.weights, this.rng, exclude));
+    let kind = pickKind(seg.weights, this.rng, exclude);
+    if (kind !== 'golden' && (seg.weights.golden ?? 0) > 0 && this.sinceGolden >= GOLDEN_PITY) kind = 'golden';
+    if (this.spawn(kind)) this.sinceGolden = kind === 'golden' ? 0 : this.sinceGolden + 1;
   }
 
   private spawn(kind: MoleKind, hole?: number): Mole | null {

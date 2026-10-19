@@ -1,6 +1,7 @@
 import { DURATION, type Game } from '../game/engine';
 import { FEVER_COMBO, FEVER_DURATION, comboMultiplier } from '../game/scoring';
 import { t } from '../i18n';
+import { ICONS } from './icons';
 
 /** 점수·시간·콤보·피버 게이지·미션. 바뀐 값만 DOM에 쓴다 */
 export class Hud {
@@ -23,7 +24,7 @@ export class Hud {
       </div>
       <div class="timebar"><span></span></div>
       <div class="gauge" title="${t('hud.feverTip', { n: FEVER_COMBO })}"><span></span><em>FEVER</em></div>
-      <p class="mission">🎯 ${t(`mission.${game.mission.id}`)} <b></b></p>`;
+      <p class="mission">${ICONS.target} ${t(`mission.${game.mission.id}`)} <b></b></p>`;
     const q = (s: string) => el.querySelector<HTMLElement>(s)!;
     this.score = q('.score');
     this.time = q('.time');
@@ -41,8 +42,8 @@ export class Hud {
       bump(this.score);
     });
     this.set('time', String(Math.ceil(game.remaining / 1000)), (v) => (this.time.textContent = v));
-    this.set('timebar', `${Math.min(100, (game.remaining / DURATION) * 100).toFixed(1)}%`, (v) => {
-      this.timebar.style.width = v;
+    this.set('timebar', Math.min(1, game.remaining / DURATION).toFixed(3), (v) => {
+      this.timebar.style.transform = `scaleX(${v})`;
     });
     this.set('combo', String(game.combo), (v) => {
       this.combo.textContent = v;
@@ -55,7 +56,7 @@ export class Hud {
     const fill = game.inFever
       ? (game.feverUntil - game.time) / FEVER_DURATION
       : (game.combo % FEVER_COMBO) / FEVER_COMBO;
-    this.set('gauge', `${(fill * 100).toFixed(1)}%`, (v) => (this.gauge.style.width = v));
+    this.set('gauge', Math.max(0, Math.min(1, fill)).toFixed(3), (v) => (this.gauge.style.transform = `scaleX(${v})`));
 
     const { mission, stats } = game;
     const state = mission.failed(stats) ? 'failed' : mission.done(stats) ? 'done' : '';
@@ -72,8 +73,7 @@ export class Hud {
   }
 }
 
+/** 숫자가 통 튄다. 클래스를 뗐다 붙이며 레이아웃을 강제하지 않도록 Web Animations로 재생 */
 function bump(el: HTMLElement): void {
-  el.classList.remove('bump');
-  void el.offsetWidth;
-  el.classList.add('bump');
+  el.animate([{ scale: '1' }, { scale: '1.25', offset: 0.4 }, { scale: '1' }], { duration: 180, easing: 'ease-out' });
 }

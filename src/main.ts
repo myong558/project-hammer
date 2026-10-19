@@ -58,7 +58,7 @@ function showStart(settings?: 'open' | 'reset'): void {
         save[key] = !save[key];
         sound.enabled = save.sound;
         writeSave(save);
-        showStart();
+        showStart(document.querySelector('.modal .settings') ? 'open' : undefined);
       },
       onLang(lang) {
         save.lang = lang;
@@ -98,7 +98,7 @@ function play(mode: Mode): void {
     onPause: () => game.pause(),
     onResume: () => game.resume(),
     onRestart: () => play(mode),
-    onQuit: showStart,
+    onQuit: () => showStart(),
   });
   mount(view.el);
 
@@ -115,6 +115,16 @@ function play(mode: Mode): void {
     timers.add(id);
   };
   let hitstopUntil = 0;
+
+  // 잡은 두더지는 그 자리에서 도감·누적 기록에 남긴다. 판 도중에 나가도 사라지지 않게
+  const dexBefore = new Set(save.dex);
+  const record = (kind: MoleKind, el: HTMLElement) => {
+    save.kills[kind]++;
+    if (save.dex.includes(kind)) return;
+    save.dex.push(kind);
+    writeSave(save);
+    fx.popup(el, 'NEW!', 'new');
+  };
   let lastSecond = -1;
 
   view.stage.addEventListener('pointerdown', (e) => {
@@ -153,14 +163,14 @@ function play(mode: Mode): void {
         board.escape(e.mole);
         if (MOLES[e.mole.kind].good && game.phase === 'playing') sound.play('tease');
         break;
+      // 소리는 화면 연출(DOM 작업)보다 먼저 낸다. 연출에 걸리는 시간만큼 소리가 늦어지지 않게
       case 'damage':
+        sound.play(e.mole.kind === 'helmet' ? 'clink' : 'king');
         board.damage(e.mole);
         if (e.mole.kind === 'helmet') {
           fx.popup(holeEl(e.mole.hole), t('popup.clink'), 'clink');
-          sound.play('clink');
         } else {
           fx.popup(holeEl(e.mole.hole), `${e.mole.hp}`, 'king');
-          sound.play('king');
           fx.shake('small');
         }
         hitstop(40);
@@ -168,14 +178,15 @@ function play(mode: Mode): void {
         break;
       case 'hit': {
         const { mole, points } = e;
+        sound.play(HIT_SOUND[mole.kind] ?? 'hit');
         const el = holeEl(mole.hole);
         board.hit(mole);
         const variant = mole.kind === 'golden' || mole.kind === 'king' ? 'gold' : game.inFever ? 'fever' : '';
         fx.popup(el, `+${points}`, variant);
+        record(mole.kind, el);
         if (mole.kind === 'clock') fx.popup(el, t('popup.time'), 'time');
         if (mole.kind === 'ice') fx.popup(el, t('popup.ice'), 'ice');
-        fx.burst(el, mole.kind === 'golden' ? ['✨', '⭐'] : mole.kind === 'king' ? ['👑', '🎉', '✨'] : ['💥', '✦']);
-        sound.play(HIT_SOUND[mole.kind] ?? 'hit');
+        fx.burst(el, mole.kind === 'golden' || mole.kind === 'king' ? ['#ffd84d', '#fff3a6', '#ff9f43'] : ['#ffffff', '#ffd84d', '#ffb37a']);
         if (mole.kind === 'king') {
           fx.banner(t('banner.kingDown'), 'king');
           fx.shake('big');
@@ -188,18 +199,19 @@ function play(mode: Mode): void {
         break;
       }
       case 'bomb':
+        sound.play('bomb');
         board.bomb(e.mole);
         fx.popup(holeEl(e.mole.hole), `${e.points}`, 'bad');
-        fx.burst(holeEl(e.mole.hole), ['💥', '🔥', '💨'], 8);
+        fx.burst(holeEl(e.mole.hole), ['#ff5a3c', '#ffb02e', '#5a5470'], 10);
+        record('bomb', holeEl(e.mole.hole));
         fx.shake('big');
-        sound.play('bomb');
         hitstop(120);
         vibrate([60, 40, 60]);
         break;
       case 'whiff':
+        sound.play('whiff');
         board.whiff(e.hole);
         hammer.stun();
-        sound.play('whiff');
         break;
       case 'comboUp':
         if (COMBO_WORDS[e.multiplier]) fx.banner(`${COMBO_WORDS[e.multiplier]} x${e.multiplier}`, 'combo');
@@ -239,7 +251,7 @@ function play(mode: Mode): void {
         view.showCountdown(t('countdown.end'));
         sound.pitch = 1;
         sound.play('end');
-        later(1100, () => showResult(e.result, game.mission.id, mode, today));
+        later(1100, () => showResult(e.result, game.mission.id, mode, today, dexBefore));
         break;
     }
   };
@@ -284,6 +296,7 @@ function play(mode: Mode): void {
   document.addEventListener('visibilitychange', onVisibility);
 
   teardown = () => {
+    writeSave(save);
     cancelAnimationFrame(raf);
     off();
     timers.forEach(clearTimeout);
@@ -294,7 +307,7 @@ function play(mode: Mode): void {
   game.start();
 }
 
-function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: Date): void {
+function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: Date, dexBefore: ReadonlySet<MoleKind>): void {
   const daily = mode === 'daily';
   const today = dateKey(date);
   const prevBest = daily ? (save.daily?.date === today ? save.daily.best : 0) : save.best;
@@ -304,13 +317,9 @@ function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: 
     else save.best = result.score;
   }
 
+  // 도감·누적 기록은 판 도중에 이미 남겼다. 여기서는 이번 판에 새로 오른 것만 골라 보여 준다
   const dex = new Set(save.dex);
-  const caught = (Object.keys(result.stats.kills) as MoleKind[]).filter((k) => result.stats.kills[k] > 0);
-  if (result.stats.bombs > 0) caught.push('bomb');
-  const newDex = caught.filter((k) => !dex.has(k));
-  newDex.forEach((k) => dex.add(k));
-  save.dex = [...dex];
-  for (const k of caught) save.kills[k] += k === 'bomb' ? result.stats.bombs : result.stats.kills[k];
+  const newDex = save.dex.filter((k) => !dexBefore.has(k));
   writeSave(save);
 
   mount(
@@ -322,7 +331,7 @@ function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: 
       goal: nextGoal(result.score, prevBest, dex),
       missionId,
       onRetry: () => play(mode),
-      onHome: showStart,
+      onHome: () => showStart(),
       onShare: () => copyText(shareText(result, { date, daily })),
     }),
   );

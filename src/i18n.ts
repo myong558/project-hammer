@@ -4,16 +4,17 @@ export type Lang = 'ko' | 'en';
 export const LANGS: Lang[] = ['ko', 'en'];
 
 const ko = {
+  'app.title': '두더지잡기',
   'app.tagline': '30초 동안, 성격 다른 두더지들과 손맛 대결!',
   'start.classic': '클래식 시작',
   'start.daily': '오늘의 챌린지',
   'start.dailySub': '{date} · 모두 같은 판',
   'start.best': '최고 기록 <b>{best}</b>점 · 오늘의 챌린지 <b>{daily}</b>점',
   'start.hint': '키보드: 숫자패드 1–9로 치기 · Esc 일시정지 · Enter 다시 하기',
-  'sound.on': '🔊 사운드 켜짐',
-  'sound.off': '🔇 사운드 꺼짐',
-  'shake.on': '📳 화면 흔들림 켜짐',
-  'shake.off': '📴 화면 흔들림 꺼짐',
+  'sound.on': '소리 켜짐',
+  'sound.off': '소리 꺼짐',
+  'shake.on': '흔들림 켜짐',
+  'shake.off': '흔들림 꺼짐',
 
   'dex.title': '두더지 도감',
   'dex.locked': '아직 못 만났어요',
@@ -28,14 +29,15 @@ const ko = {
   'dex.caught': '지금까지 {n}마리 잡았어요',
   'dex.exploded': '지금까지 {n}번 터뜨렸어요',
 
-  'lang.label': '언어',
+  'lang.label': '언어 선택',
   'settings.title': '설정',
   'settings.open': '설정 열기',
+  'settings.feedback': '소리·진동',
   'theme.label': '컬러 모드',
   'theme.system': '기기 설정',
   'theme.light': '라이트',
   'theme.dark': '다크',
-  'skin.label': '스킨',
+  'skin.label': '스킨 선택',
   'skin.auto': '자동',
   'skin.autoHint': '자동은 매일 바뀌어요 (오늘: {skin})',
   'skin.garden': '정원',
@@ -66,7 +68,7 @@ const ko = {
   'segment.melee': '혼전',
   'segment.rush': '러시',
   'segment.spurt': '라스트 스퍼트! 점수 x1.5',
-  'banner.kingAppear': '👑 왕 두더지 등장! 연타!',
+  'banner.kingAppear': '왕 두더지 등장! 연타!',
   'banner.kingDown': '왕 두더지 격파! +100',
   'banner.comboBreak': '{n}콤보 끊김…',
   'popup.clink': '탕!',
@@ -77,7 +79,7 @@ const ko = {
   'mode.classic': '클래식',
   'result.grade': '{g}등급',
   'result.final': '<b class="final-score">0</b>점',
-  'result.record': '🎉 신기록!',
+  'result.record': '신기록!',
   'result.accuracy': '명중률',
   'result.maxCombo': '최고 콤보',
   'result.missed': '놓친 두더지',
@@ -128,16 +130,17 @@ const ko = {
 export type MessageKey = keyof typeof ko;
 
 const en: Record<MessageKey, string> = {
+  'app.title': 'Whack-a-Mole',
   'app.tagline': 'Quirky moles, 30 seconds. Whack away!',
   'start.classic': 'Play Classic',
   'start.daily': "Today's Challenge",
   'start.dailySub': '{date} · same board for everyone',
   'start.best': 'Best <b>{best}</b> · Today <b>{daily}</b>',
   'start.hint': 'Keyboard: numpad 1–9 to whack · Esc pause · Enter replay',
-  'sound.on': '🔊 Sound on',
-  'sound.off': '🔇 Sound off',
-  'shake.on': '📳 Shake on',
-  'shake.off': '📴 Shake off',
+  'sound.on': 'Sound on',
+  'sound.off': 'Sound off',
+  'shake.on': 'Shake on',
+  'shake.off': 'Shake off',
 
   'dex.title': 'Mole Guide',
   'dex.locked': 'Not met yet',
@@ -152,14 +155,15 @@ const en: Record<MessageKey, string> = {
   'dex.caught': '{n} caught so far',
   'dex.exploded': '{n} set off so far',
 
-  'lang.label': 'Language',
+  'lang.label': 'Choose language',
   'settings.title': 'Settings',
   'settings.open': 'Open settings',
+  'settings.feedback': 'Sound & vibration',
   'theme.label': 'Color mode',
   'theme.system': 'System',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
-  'skin.label': 'Skin',
+  'skin.label': 'Choose skin',
   'skin.auto': 'Auto',
   'skin.autoHint': 'Auto changes daily (today: {skin})',
   'skin.garden': 'Garden',
@@ -190,7 +194,7 @@ const en: Record<MessageKey, string> = {
   'segment.melee': 'Chaos!',
   'segment.rush': 'Rush!',
   'segment.spurt': 'Last spurt! Score x1.5',
-  'banner.kingAppear': '👑 King mole! Mash it!',
+  'banner.kingAppear': 'King mole! Mash it!',
   'banner.kingDown': 'King down! +100',
   'banner.comboBreak': 'Combo {n} broken…',
   'popup.clink': 'Clang!',
@@ -201,7 +205,7 @@ const en: Record<MessageKey, string> = {
   'mode.classic': 'Classic',
   'result.grade': 'Grade {g}',
   'result.final': '<b class="final-score">0</b> pts',
-  'result.record': '🎉 New record!',
+  'result.record': 'New record!',
   'result.accuracy': 'Accuracy',
   'result.maxCombo': 'Best combo',
   'result.missed': 'Missed',
@@ -255,6 +259,7 @@ let current: Lang = 'ko';
 export function setLang(lang: Lang): void {
   current = lang;
   document.documentElement.lang = lang;
+  document.title = dictionaries[lang]['app.title'];
 }
 
 export function getLang(): Lang {

@@ -1,3 +1,5 @@
+import { HAMMER } from './icons';
+
 /** 손맛 연출: 점수 팝업, 파티클, 화면 흔들림, 배너, 망치 커서, 폭죽 */
 export class Effects {
   constructor(
@@ -13,11 +15,12 @@ export class Effects {
     el.addEventListener('animationend', () => el.remove());
   }
 
-  burst(target: HTMLElement, chars: string[], count = 6): void {
+  /** 별 모양 조각이 사방으로 튄다 */
+  burst(target: HTMLElement, colors: string[], count = 7): void {
     for (let i = 0; i < count; i++) {
       const el = document.createElement('span');
       el.className = 'particle';
-      el.textContent = chars[i % chars.length];
+      el.style.background = colors[i % colors.length];
       const angle = (Math.PI * 2 * i) / count + Math.random() * 0.6;
       const dist = 2.5 + Math.random() * 2;
       el.style.setProperty('--dx', `${Math.cos(angle) * dist}em`);
@@ -52,27 +55,30 @@ export class Hammer {
   constructor(private readonly stage: HTMLElement) {
     this.el = document.createElement('span');
     this.el.className = 'hammer';
-    this.el.textContent = '🔨';
+    this.el.innerHTML = HAMMER;
     this.el.setAttribute('aria-hidden', 'true');
     stage.append(this.el);
     stage.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'mouse') this.moveTo(e.clientX, e.clientY, true);
     });
+    stage.addEventListener('pointerenter', () => (this.rect = null));
     stage.addEventListener('pointerleave', () => this.el.classList.remove('visible'));
+    window.addEventListener('resize', () => (this.rect = null));
   }
 
+  /**
+   * 위치는 레이아웃을 다시 계산하지 않는 translate로 옮긴다.
+   * 판 위치는 들어올 때·창 크기가 바뀔 때만 다시 잰다
+   */
   moveTo(clientX: number, clientY: number, visible: boolean): void {
-    const rect = this.stage.getBoundingClientRect();
-    this.el.style.left = `${clientX - rect.left}px`;
-    this.el.style.top = `${clientY - rect.top}px`;
+    this.rect ??= this.stage.getBoundingClientRect();
+    this.el.style.translate = `${(clientX - this.rect.left).toFixed(1)}px ${(clientY - this.rect.top).toFixed(1)}px`;
     this.el.classList.toggle('visible', visible);
   }
 
   swing(clientX: number, clientY: number, touch: boolean): void {
     this.moveTo(clientX, clientY, true);
-    this.el.classList.remove('swing');
-    void this.el.offsetWidth;
-    this.el.classList.add('swing');
+    this.el.animate([{ rotate: '0deg' }, { rotate: '65deg', offset: 0.4 }, { rotate: '0deg' }], { duration: 150, easing: 'ease-out' });
     if (touch) {
       clearTimeout(this.hideTimer);
       this.hideTimer = setTimeout(() => this.el.classList.remove('visible'), 260);
@@ -80,11 +86,19 @@ export class Hammer {
   }
 
   stun(): void {
-    this.el.classList.remove('stunned');
-    void this.el.offsetWidth;
-    this.el.classList.add('stunned');
+    this.el.animate(
+      [
+        { rotate: '0deg', filter: 'grayscale(1)' },
+        { rotate: '15deg', offset: 0.25 },
+        { rotate: '-15deg', offset: 0.5 },
+        { rotate: '10deg', offset: 0.75 },
+        { rotate: '0deg', filter: 'grayscale(0)' },
+      ],
+      { duration: 300, easing: 'ease-in-out' },
+    );
   }
 
+  private rect: DOMRect | null = null;
   private hideTimer: ReturnType<typeof setTimeout> | undefined;
 }
 

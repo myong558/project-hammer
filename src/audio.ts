@@ -45,8 +45,10 @@ export class Sound {
     const t = this.ctx.currentTime;
     switch (name) {
       case 'hit':
-        this.tone(520, 0.09, 'square', 0.18, 240, t);
-        this.noise(0.05, 0.12, t);
+        // 뿅망치: 짧게 퉁 하는 소리 위로 뿅! 하고 올라가는 소리
+        this.tone(220, 0.06, 'triangle', 0.25, 110, t);
+        this.tone(700, 0.09, 'sine', 0.22, 1700, t);
+        this.noise(0.025, 0.08, t);
         break;
       case 'golden':
         [880, 1175, 1568].forEach((f, i) => this.tone(f, 0.12, 'triangle', 0.18, undefined, t + i * 0.05));

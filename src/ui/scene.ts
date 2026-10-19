@@ -148,6 +148,9 @@ function art(skin: Skin): SceneArt {
   }
 }
 
+/** 겹마다 마우스를 따라 밀리는 최대 거리(px). 가까울수록 크다 */
+const DEPTH: Record<string, number> = { far: -8, mid: -18, near: -32 };
+
 let root: HTMLElement | null = null;
 let current: Skin | null = null;
 
@@ -162,7 +165,7 @@ export function setSceneSkin(skin: Skin): void {
   const a = art(skin);
   const rng = mulberry32(42);
   const layer = (name: string, body: string) =>
-    `<div class="scene-depth ${name}"><div class="scene-strip" style="background-image:${svgUrl(body).replace(/"/g, '&quot;')}"></div></div>`;
+    `<div class="scene-depth ${name}" data-depth="${DEPTH[name]}"><div class="scene-strip" style="background-image:${svgUrl(body).replace(/"/g, '&quot;')}"></div></div>`;
   const clouds = Array.from(
     { length: a.clouds },
     () =>
@@ -181,8 +184,8 @@ export function setSceneSkin(skin: Skin): void {
   root!.innerHTML = `
     <div class="scene-sky"></div>
     <div class="scene-stars">${stars}</div>
-    <div class="scene-depth sun-wrap"><div class="scene-sun"></div></div>
-    <div class="scene-depth clouds">${clouds}</div>
+    <div class="scene-depth sun-wrap" data-depth="-4"><div class="scene-sun"></div></div>
+    <div class="scene-depth clouds" data-depth="-6">${clouds}</div>
     ${layer('far', a.far)}
     ${layer('mid', a.mid)}
     ${layer('near', a.near)}
@@ -196,23 +199,29 @@ function mountScene(): void {
   root.setAttribute('aria-hidden', 'true');
   document.body.prepend(root);
 
-  // 포인터·기기 기울기에 따라 겹마다 다르게 밀어 깊이감을 낸다
+  // 마우스 위치·기기 기울기에 따라 겹마다 다른 거리만큼 좌우로만 민다(위아래로는 움직이지 않음).
+  // 변수를 바꾸면 배경 전체 스타일을 다시 계산하므로, 겹 네 장의 transform만 직접 바꾼다
   let frame = 0;
   let tx = 0;
-  let ty = 0;
-  const push = (x: number, y: number) => {
+  const push = (x: number) => {
     tx = Math.max(-1, Math.min(1, x));
-    ty = Math.max(-1, Math.min(1, y));
     if (frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
-      root!.style.setProperty('--px', tx.toFixed(3));
-      root!.style.setProperty('--py', ty.toFixed(3));
+      root!.querySelectorAll<HTMLElement>('[data-depth]').forEach((el) => {
+        el.style.transform = `translate3d(${(tx * Number(el.dataset.depth)).toFixed(1)}px, 0, 0)`;
+      });
     });
   };
-  window.addEventListener('pointermove', (e) => push((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1), { passive: true });
+  // 터치는 두드릴 때마다 배경이 밀려 어색하므로 마우스만 따른다
+  window.addEventListener(
+    'pointermove',
+    (e) => {
+      if (e.pointerType === 'mouse') push((e.clientX / innerWidth) * 2 - 1);
+    },
+    { passive: true },
+  );
   window.addEventListener('deviceorientation', (e) => {
-    if (e.gamma === null || e.beta === null) return;
-    push(e.gamma / 30, (e.beta - 45) / 30);
+    if (e.gamma !== null) push(e.gamma / 30);
   });
 }

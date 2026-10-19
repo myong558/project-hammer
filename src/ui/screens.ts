@@ -5,9 +5,10 @@ import type { GameResult, MoleKind } from '../game/types';
 import type { MissionId } from '../game/missions';
 import { LANGS, getLang, moleDesc, moleName, t, type Lang, type MessageKey } from '../i18n';
 import type { SaveData } from '../storage';
-import { SKIN_EMOJI, SKIN_SETTINGS, THEMES, type Skin, type SkinSetting, type Theme } from '../theme';
-import { createMoleEl } from './board';
+import { SKIN_SETTINGS, THEMES, type Skin, type SkinSetting, type Theme } from '../theme';
+import { createMoleEl, holeInner } from './board';
 import { confetti, countUp } from './effects';
+import { DECO_ART, HAMMER, ICONS, MORE_ICONS, SKIN_ICONS, STAR_OFF, STAR_ON, THEME_ICONS } from './icons';
 
 export type Mode = 'classic' | 'daily';
 
@@ -20,7 +21,24 @@ function html(markup: string): HTMLElement {
 }
 
 function holeMarkup(cls: string): string {
-  return `<div class="${cls}" aria-hidden="true"><span class="pit"></span><span class="slot"></span><span class="rim"></span></div>`;
+  return `<div class="${cls}" aria-hidden="true">${holeInner()}</div>`;
+}
+
+function closeButton(): string {
+  return `<button class="modal-x icon-btn" data-close aria-label="${t('common.close')}">${MORE_ICONS.close}</button>`;
+}
+
+/** 작은 두더지 초상. 도감 칸·결과 화면에 쓴다 */
+function thumbMarkup(kind: MoleKind, cls = 'thumb'): string {
+  return `<span class="${cls}" data-thumb="${kind}" aria-hidden="true"><span class="slot"></span></span>`;
+}
+
+function fillThumbs(root: HTMLElement): void {
+  root.querySelectorAll<HTMLElement>('[data-thumb]').forEach((t) => {
+    const mole = createMoleEl(t.dataset.thumb as MoleKind);
+    mole.classList.add('up');
+    t.querySelector('.slot')!.append(mole);
+  });
 }
 
 function pressed(on: boolean): string {
@@ -78,15 +96,16 @@ export function startScreen(opts: StartOptions): HTMLElement {
   const dex = new Set(save.dex);
   const dailyBest = save.daily?.date === opts.today ? save.daily.best : 0;
   const lang = getLang();
+  const otherLang = LANGS.find((l) => l !== lang)!;
   const el = html(`
     <main class="screen start">
-      <div class="corner left seg lang-switch" role="group" aria-label="${t('lang.label')}">
-        ${LANGS.map((l) => `<button data-lang="${l}" ${pressed(l === lang)}>${LANG_LABEL[l]}</button>`).join('')}
-      </div>
-      <button class="corner right icon-btn settings-btn" aria-label="${t('settings.open')}">⚙️</button>
+      <button class="corner left lang-btn" data-lang="${otherLang}" aria-label="${t('lang.label')}: ${LANG_LABEL[lang]} → ${LANG_LABEL[otherLang]}">
+        ${ICONS.globe}<span>${LANG_LABEL[otherLang]}</span>
+      </button>
+      <button class="corner right icon-btn settings-btn" aria-label="${t('settings.open')}">${ICONS.gear}</button>
       <div class="col main-col">
         ${holeMarkup('title-hole')}
-        <h1>Project Hammer <span class="title-hammer">🔨</span></h1>
+        <h1>${t('app.title')} <span class="title-hammer">${HAMMER}</span></h1>
         <p class="tagline">${t('app.tagline')}</p>
         <div class="modes">
           <button class="btn primary" data-mode="classic">${t('start.classic')}</button>
@@ -99,10 +118,6 @@ export function startScreen(opts: StartOptions): HTMLElement {
           <h2>${t('dex.title')} <small>${dex.size}/${MOLE_ORDER.length}</small></h2>
           <ul>${MOLE_ORDER.map((k) => `<li>${dexItem(k, dex.has(k))}</li>`).join('')}</ul>
         </section>
-        <div class="toggles">
-          <button class="chip" data-toggle="sound" ${pressed(save.sound)}>${t(save.sound ? 'sound.on' : 'sound.off')}</button>
-          <button class="chip" data-toggle="shake" ${pressed(save.shake)}>${t(save.shake ? 'shake.on' : 'shake.off')}</button>
-        </div>
         <p class="hint">${t('start.hint')}</p>
       </div>
     </main>`);
@@ -110,18 +125,12 @@ export function startScreen(opts: StartOptions): HTMLElement {
   const titleMole = createMoleEl('normal');
   el.querySelector('.title-hole .slot')!.append(titleMole);
   titleMole.classList.add('bob');
+  fillThumbs(el);
 
   el.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((b) =>
     b.addEventListener('click', () => opts.onPlay(b.dataset.mode as Mode)),
   );
-  el.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((b) =>
-    b.addEventListener('click', () => opts.onToggle(b.dataset.toggle as 'sound' | 'shake')),
-  );
-  el.querySelectorAll<HTMLButtonElement>('.lang-switch [data-lang]').forEach((b) =>
-    b.addEventListener('click', () => {
-      if (b.dataset.lang !== lang) opts.onLang(b.dataset.lang as Lang);
-    }),
-  );
+  el.querySelector('.lang-btn')!.addEventListener('click', () => opts.onLang(otherLang));
   el.querySelectorAll<HTMLButtonElement>('.dex [data-kind]').forEach((b) =>
     b.addEventListener('click', () => {
       const kind = b.dataset.kind as MoleKind;
@@ -137,12 +146,12 @@ export function startScreen(opts: StartOptions): HTMLElement {
 
 function dexItem(kind: MoleKind, found: boolean): string {
   if (!found) {
-    return `<div class="dex-item locked" aria-label="??? — ${t('dex.locked')}"><span class="dex-emoji">❔</span><span>???</span></div>`;
+    return `<div class="dex-item locked" role="img" aria-label="??? — ${t('dex.locked')}" title="${t('dex.locked')}">${thumbMarkup(kind)}</div>`;
   }
   const def = MOLES[kind];
   const pts = def.points > 0 ? `+${def.points}` : `${def.points}`;
-  return `<button class="dex-item${def.good ? '' : ' danger'}" data-kind="${kind}" title="${t('dex.tapHint')}">
-    <span class="dex-emoji">${def.emoji}</span><span class="dex-name">${moleName(kind)}</span><small>${pts}</small></button>`;
+  return `<button class="dex-item${def.good ? '' : ' danger'}" data-kind="${kind}" aria-label="${moleName(kind)} ${pts}" title="${moleName(kind)} · ${t('dex.tapHint')}">
+    ${thumbMarkup(kind)}</button>`;
 }
 
 function appearLabel(kind: MoleKind): string {
@@ -156,8 +165,9 @@ function dexDetail(kind: MoleKind, count: number): HTMLElement {
   const def = MOLES[kind];
   const el = html(`
     <div class="dex-detail${def.good ? '' : ' danger'}">
+      ${closeButton()}
       ${holeMarkup('detail-hole')}
-      <h2>${def.emoji} ${moleName(kind)}</h2>
+      <h2>${moleName(kind)}</h2>
       <dl class="detail-stats">
         <div><dt>${t('dex.points')}</dt><dd>${def.points > 0 ? '+' : ''}${def.points}</dd></div>
         <div><dt>${t('dex.hits')}</dt><dd>${t('dex.hitsValue', { n: def.hp })}</dd></div>
@@ -165,7 +175,6 @@ function dexDetail(kind: MoleKind, count: number): HTMLElement {
       </dl>
       <p class="detail-desc">${moleDesc(kind)}</p>
       <p class="detail-count">${t(def.good ? 'dex.caught' : 'dex.exploded', { n: count })}</p>
-      <button class="btn" data-close>${t('common.close')}</button>
     </div>`);
   const mole = createMoleEl(kind);
   mole.classList.add('up');
@@ -178,12 +187,13 @@ function settingsPanel(opts: StartOptions): HTMLElement {
   const lang = getLang();
   const el = html(`
     <div class="settings">
-      <h2>⚙️ ${t('settings.title')}</h2>
+      ${closeButton()}
+      <h2>${ICONS.gear} ${t('settings.title')}</h2>
       <div class="settings-grid">
         <section>
           <h3>${t('theme.label')}</h3>
           <div class="seg" role="group">
-            ${THEMES.map((th) => `<button data-theme="${th}" ${pressed(save.theme === th)}>${t(`theme.${th}`)}</button>`).join('')}
+            ${THEMES.map((th) => `<button data-theme="${th}" ${pressed(save.theme === th)} title="${t(`theme.${th}`)}">${THEME_ICONS[th]}<span class="label">${t(`theme.${th}`)}</span></button>`).join('')}
           </div>
         </section>
         <section>
@@ -195,13 +205,20 @@ function settingsPanel(opts: StartOptions): HTMLElement {
         <section class="skin-section">
           <h3>${t('skin.label')}</h3>
           <div class="skins" role="group">
-            ${SKIN_SETTINGS.map((s) => `<button data-skin="${s}" ${pressed(save.skin === s)}><span>${SKIN_EMOJI[s]}</span>${t(`skin.${s}`)}</button>`).join('')}
+            ${SKIN_SETTINGS.map((s) => `<button data-skin="${s}" ${pressed(save.skin === s)} title="${t(`skin.${s}`)}" aria-label="${t(`skin.${s}`)}">${SKIN_ICONS[s]}<span class="label">${t(`skin.${s}`)}</span></button>`).join('')}
           </div>
-          <p class="note">${t('skin.autoHint', { skin: `${SKIN_EMOJI[opts.todaySkin]} ${t(`skin.${opts.todaySkin}`)}` })}</p>
+          <p class="note">${t('skin.autoHint', { skin: t(`skin.${opts.todaySkin}`) })}</p>
+        </section>
+        <section class="toggle-section">
+          <h3>${t('settings.feedback')}</h3>
+          <div class="toggles">
+            <button class="chip" data-toggle="sound" ${pressed(save.sound)}>${save.sound ? ICONS.soundOn : ICONS.soundOff}<span class="label">${t(save.sound ? 'sound.on' : 'sound.off')}</span></button>
+            <button class="chip" data-toggle="shake" ${pressed(save.shake)}>${save.shake ? ICONS.shakeOn : ICONS.shakeOff}<span class="label">${t(save.shake ? 'shake.on' : 'shake.off')}</span></button>
+          </div>
         </section>
         <section class="reset-section">
           <h3>${t('reset.label')}</h3>
-          <p class="note">${opts.settings === 'reset' ? `✅ ${t('reset.done')}` : t('reset.desc')}</p>
+          <p class="note${opts.settings === 'reset' ? ' done' : ''}">${opts.settings === 'reset' ? `${ICONS.check} ${t('reset.done')}` : t('reset.desc')}</p>
           <button class="btn danger" data-reset>${t('reset.label')}</button>
           <div class="confirm" hidden>
             <p>${t('reset.confirm')}</p>
@@ -212,7 +229,6 @@ function settingsPanel(opts: StartOptions): HTMLElement {
           </div>
         </section>
       </div>
-      <button class="btn ghost close-btn" data-close>${t('common.close')}</button>
     </div>`);
 
   const select = (attr: string, value: string) =>
@@ -234,6 +250,9 @@ function settingsPanel(opts: StartOptions): HTMLElement {
     b.addEventListener('click', () => {
       if (b.dataset.lang !== lang) opts.onLang(b.dataset.lang as Lang);
     }),
+  );
+  el.querySelectorAll<HTMLButtonElement>('[data-toggle]').forEach((b) =>
+    b.addEventListener('click', () => opts.onToggle(b.dataset.toggle as 'sound' | 'shake')),
   );
 
   const resetBtn = el.querySelector<HTMLButtonElement>('[data-reset]')!;
@@ -274,11 +293,11 @@ export function gameScreen(opts: {
     <main class="screen game${opts.daily ? ' daily' : ''}">
       <div class="top">
         <div class="hud"></div>
-        <button class="pause-btn" aria-label="${t('hud.pause')}">⏸</button>
+        <button class="pause-btn" aria-label="${t('hud.pause')}">${ICONS.pause}</button>
       </div>
       <div class="stage-wrap">
         <div class="stage">
-          <div class="deco" aria-hidden="true">${'<span></span>'.repeat(8)}</div>
+          <div class="deco" aria-hidden="true">${decoMarkup()}</div>
           <div class="board"></div>
           <div class="banners" aria-live="polite"></div>
           <div class="countdown" hidden></div>
@@ -299,6 +318,10 @@ export function gameScreen(opts: {
   q('[data-act="restart"]').addEventListener('click', opts.onRestart);
   q('[data-act="quit"]').addEventListener('click', opts.onQuit);
 
+  // 판은 HUD를 뺀 높이에 맞추므로 HUD 높이(글자 크기·줄바꿈에 따라 달라짐)를 재서 넘겨 준다
+  const top = q('.top');
+  new ResizeObserver(() => el.style.setProperty('--top-h', `${top.offsetHeight}px`)).observe(top);
+
   return {
     el,
     hud: q('.hud'),
@@ -317,6 +340,13 @@ export function gameScreen(opts: {
       if (show) pauseMenu.querySelector<HTMLButtonElement>('button')!.focus();
     },
   };
+}
+
+/** 판 가장자리 소품. 지금 적용된 스킨을 따른다 */
+function decoMarkup(): string {
+  const skin = (document.documentElement.dataset.skin ?? 'garden') as Skin;
+  const [a, b] = DECO_ART[skin] ?? DECO_ART.garden;
+  return Array.from({ length: 6 }, (_, i) => `<span>${i % 2 ? b : a}</span>`).join('');
 }
 
 /* ---------- 결과 화면 ---------- */
@@ -354,10 +384,16 @@ export function resultScreen(opts: {
       <div class="confetti-layer" aria-hidden="true"></div>
       <div class="col main-col">
         <p class="mode">${opts.daily ? t('start.daily') : t('mode.classic')}</p>
-        <div class="grade" aria-label="${t('result.grade', { g: result.grade })}">${result.grade}</div>
-        <div class="stars">${result.stars.map((s, i) => `<span class="${s ? 'on' : ''}" style="--i:${i}">${s ? '⭐' : '☆'}</span>`).join('')}</div>
+        <div class="grade-row">
+          <div class="grade" aria-label="${t('result.grade', { g: result.grade })}">${result.grade}</div>
+          <div class="stars">${result.stars.map((s, i) => `<span class="${s ? 'on' : ''}" style="--i:${i}">${s ? STAR_ON : STAR_OFF}</span>`).join('')}</div>
+        </div>
         <p class="final">${t('result.final')}</p>
         ${opts.isRecord ? `<p class="record">${t('result.record')}</p>` : ''}
+        <ul class="kills">
+          ${killed.map((k) => `<li aria-label="${moleName(k)} ${stats.kills[k]}">${thumbMarkup(k, 'thumb mini')}<b>×${stats.kills[k]}</b>${opts.newDex.includes(k) ? '<em>NEW</em>' : ''}</li>`).join('')}
+          ${stats.bombs > 0 ? `<li class="bad" aria-label="${moleName('bomb')} ${stats.bombs}">${thumbMarkup('bomb', 'thumb mini')}<b>×${stats.bombs}</b>${opts.newDex.includes('bomb') ? '<em>NEW</em>' : ''}</li>` : ''}
+        </ul>
       </div>
       <div class="col side-col">
         <p class="goal">${goalText(opts.goal)}</p>
@@ -368,21 +404,18 @@ export function resultScreen(opts: {
           <div><dt>${t('result.bombs')}</dt><dd>${stats.bombs}</dd></div>
         </dl>
         <p class="mission-result ${result.missionDone ? 'done' : ''}">
-          🎯 ${missionLabel} — ${result.missionDone ? t('result.missionDone', { n: result.missionBonus }) : t('result.missionFail')}
+          ${ICONS.target} ${missionLabel} — ${result.missionDone ? t('result.missionDone', { n: result.missionBonus }) : t('result.missionFail')}
         </p>
-        <ul class="kills">
-          ${killed.map((k) => `<li>${MOLES[k].emoji}<b>×${stats.kills[k]}</b>${opts.newDex.includes(k) ? '<em>NEW</em>' : ''}</li>`).join('')}
-          ${stats.bombs > 0 ? `<li class="bad">💣<b>×${stats.bombs}</b>${opts.newDex.includes('bomb') ? '<em>NEW</em>' : ''}</li>` : ''}
-        </ul>
         <div class="actions">
           <button class="btn primary" data-act="retry">${t('result.retry')}</button>
-          <button class="btn" data-act="share">${t('result.share')}</button>
-          <button class="btn ghost" data-act="home">${t('result.home')}</button>
+          <button class="btn icon-action" data-act="share" aria-label="${t('result.share')}" title="${t('result.share')}">${MORE_ICONS.share}</button>
+          <button class="btn icon-action" data-act="home" aria-label="${t('result.home')}" title="${t('result.home')}">${MORE_ICONS.home}</button>
         </div>
       </div>
       <p class="toast" role="status"></p>
     </main>`);
   const q = (s: string) => el.querySelector<HTMLElement>(s)!;
+  fillThumbs(el);
   countUp(q('.final-score'), result.score);
   if (opts.isRecord) setTimeout(() => confetti(q('.confetti-layer')), 400);
 
