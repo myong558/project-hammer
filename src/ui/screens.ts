@@ -7,7 +7,7 @@ import { LANGS, getLang, moleDesc, moleName, t, type Lang, type MessageKey } fro
 import type { SaveData } from '../storage';
 import { SKIN_SETTINGS, THEMES, type Skin, type SkinSetting, type Theme } from '../theme';
 import { createMoleEl, holeInner } from './board';
-import { captureResult, type ShareOutcome } from '../share';
+import { captureResult, shareLink, type ShareOutcome } from '../share';
 import { confetti, countUp } from './effects';
 import { DECO_ART, HAMMER, ICONS, MORE_ICONS, SKIN_ICONS, STAR_OFF, STAR_ON, THEME_ICONS } from './icons';
 
@@ -355,6 +355,11 @@ function settingsPanel(opts: StartOptions): HTMLElement {
             ${toggleChip('shake', save.shake)}
           </div>
         </section>
+        <section class="share-section">
+          <h3>${t('invite.label')}</h3>
+          <button class="btn" data-share-game>${MORE_ICONS.link} ${t('invite.button')}</button>
+          <p class="note" role="status"></p>
+        </section>
         <section class="reset-section">
           <h3>${t('reset.label')}</h3>
           <p class="note${opts.settings === 'reset' ? ' done' : ''}">${opts.settings === 'reset' ? `${ICONS.check} ${t('reset.done')}` : t('reset.desc')}</p>
@@ -399,6 +404,19 @@ function settingsPanel(opts: StartOptions): HTMLElement {
       b.innerHTML = toggleInner(key, save[key]);
     }),
   );
+
+  // 게임 주소를 친구에게 보낸다. 공유 창이 없으면 클립보드에 복사한다
+  const shareGameBtn = el.querySelector<HTMLButtonElement>('[data-share-game]')!;
+  shareGameBtn.addEventListener('click', async () => {
+    shareGameBtn.disabled = true;
+    const outcome = await shareLink(t('invite.text'));
+    el.querySelector('.share-section .note')!.textContent =
+      outcome === 'shared' ? t('toast.shared')
+      : outcome === 'copied' ? t('invite.copied')
+      : outcome === 'failed' ? t('toast.failed')
+      : '';
+    shareGameBtn.disabled = false;
+  });
 
   const resetBtn = el.querySelector<HTMLButtonElement>('[data-reset]')!;
   const confirm = el.querySelector<HTMLElement>('.confirm')!;

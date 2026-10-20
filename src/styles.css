@@ -2366,6 +2366,43 @@ button.dex-item:focus-visible {
 .settings .seg {
   display: flex;
   width: 100%;
+  /* 칸이 좁으면(갤럭시 412px 폭 등) 이름을 숨기고 아이콘만 둔다. 이름 때문에 버튼이 테두리 밖으로 넘치지 않게 */
+  container-type: inline-size;
+}
+
+.settings .seg button {
+  min-width: 0;
+}
+
+/* 양 끝 버튼의 초점 고리가 둥근 테두리 밖으로 삐져나오지 않게 버튼 안쪽에 그린다 */
+.seg button:focus-visible {
+  outline-offset: -3px;
+}
+
+.seg button[aria-pressed='true']:focus-visible {
+  outline-color: var(--accent-fg);
+}
+
+@container (max-width: 360px) {
+  .seg .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* 설정의 게임 링크 공유 */
+.share-section .btn {
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.4em;
+}
+
+.share-section .note:empty {
+  display: none;
 }
 
 /* 영어 이름(Snowy Peak 등)이 다섯 칸에 다 들어가지 않으면 칸을 늘리지 않고 다음 줄로 넘긴다 */
