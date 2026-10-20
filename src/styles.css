@@ -2079,6 +2079,21 @@ button.dex-item:focus-visible {
   transition: none !important;
 }
 
+/* 카카오톡 공유: 카카오 노란 버튼 */
+.actions .kakao {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.4em;
+  background: #fee500;
+  color: rgb(0 0 0 / 0.85);
+}
+
+.actions .kakao .icon {
+  width: 1.2em;
+  height: 1.2em;
+}
+
 /* 결과 이미지를 보낸 뒤 게임 링크를 이어서 보내는 버튼 */
 .actions .share-link {
   grid-column: 1 / -1;

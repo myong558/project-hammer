@@ -1,6 +1,7 @@
 import { MOLES, MOLE_ORDER } from './game/moles';
 import type { GameResult } from './game/types';
 import { t } from './i18n';
+import { shareToKakao, type KakaoShare } from './kakao';
 
 export function shareText(result: GameResult, opts: { date: Date; daily: boolean }): string {
   const { stats } = result;
@@ -36,9 +37,27 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** 공유 링크는 쿼리·해시를 뗀 게임 첫 화면 주소다 */
+/** 공유하는 게임 주소. 개발 서버에서 공유해도 친구가 열 수 있도록 배포 주소로 고정한다 */
+export const GAME_URL = 'https://myong558.github.io/project-hammer/';
+
 export function gameLink(): string {
-  return location.href.split(/[?#]/)[0];
+  return GAME_URL;
+}
+
+/** 카카오톡 피드 메시지: 제목에 점수, 설명에 잡은 두더지·콤보를 담는다 */
+export function kakaoMessage(result: GameResult, opts: { date: Date; daily: boolean }): KakaoShare {
+  const [title, ...rest] = shareText(result, opts).split('\n');
+  return { title, description: rest.join('\n'), buttonTitle: t('share.kakaoButton'), url: gameLink() };
+}
+
+/** 카카오톡으로 결과 이미지와 게임 링크를 한 메시지에 담아 보낸다 */
+export async function shareKakao(image: Blob | null, msg: KakaoShare): Promise<ShareOutcome> {
+  if (!image) return 'failed';
+  try {
+    return (await shareToKakao(image, msg)) ? 'shared' : 'failed';
+  } catch {
+    return 'failed';
+  }
 }
 
 /**
@@ -58,7 +77,8 @@ export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   const holder = document.createElement('div');
   holder.setAttribute('aria-hidden', 'true');
   Object.assign(holder.style, { position: 'fixed', inset: '0', clipPath: 'inset(100%)', pointerEvents: 'none' });
-  Object.assign(clone.style, { width: `${el.offsetWidth}px`, height: `${el.offsetHeight}px` });
+  // 높이는 내용에 맞춰 줄여 빈 여백 없이 담는다(카카오톡 미리보기에서 잘리지 않도록)
+  Object.assign(clone.style, { width: `${el.offsetWidth}px`, height: 'auto', justifyContent: 'flex-start', gap: '1.2em' });
   holder.append(clone);
   el.after(holder);
   try {
@@ -85,8 +105,7 @@ export async function shareResult(text: string, image: Blob | null): Promise<Sha
 
   try {
     if (file && navigator.canShare?.({ files: [file] })) {
-      await copyText(`${text}
-${gameLink()}`);
+      await copyText(`${text}\n${gameLink()}`);
       await navigator.share({ files: [file] });
       return 'sharedImage';
     }
@@ -99,8 +118,7 @@ ${gameLink()}`);
     // 공유 시트가 실패하면 복사로 넘어간다
   }
 
-  const copied = await copyText(`${text}
-${gameLink()}`);
+  const copied = await copyText(`${text}\n${gameLink()}`);
   if (image) {
     download(image, 'project-hammer-result.png');
     return copied ? 'copiedSaved' : 'failed';
@@ -118,8 +136,7 @@ export async function shareLink(text: string): Promise<ShareOutcome> {
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
   }
-  return (await copyText(`${text}
-${gameLink()}`)) ? 'copied' : 'failed';
+  return (await copyText(`${text}\n${gameLink()}`)) ? 'copied' : 'failed';
 }
 
 function download(blob: Blob, name: string): void {

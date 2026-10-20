@@ -7,7 +7,7 @@ import { nextGoal } from './game/scoring';
 import type { MissionId } from './game/missions';
 import type { GameEvent, GameResult, MoleKind } from './game/types';
 import { setLang, t } from './i18n';
-import { shareLink, shareResult, shareText } from './share';
+import { kakaoMessage, shareKakao, shareLink, shareResult, shareText } from './share';
 import { emptyProgress, loadSave, writeSave } from './storage';
 import { applySkin, applyTheme, resolveSkin } from './theme';
 import { Board } from './ui/board';
@@ -343,6 +343,7 @@ function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: 
       onHome: () => showStart(),
       onShare: (image) => shareResult(shareText(result, { date, daily }), image),
       onShareLink: () => shareLink(shareText(result, { date, daily })),
+      onShareKakao: (image) => shareKakao(image, kakaoMessage(result, { date, daily })),
     }),
   );
   if (isRecord) sound.play('record');
