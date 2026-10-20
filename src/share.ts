@@ -1,7 +1,6 @@
 import { MOLES, MOLE_ORDER } from './game/moles';
 import type { GameResult } from './game/types';
 import { t } from './i18n';
-import { shareToKakao, type KakaoShare } from './kakao';
 
 export function shareText(result: GameResult, opts: { date: Date; daily: boolean }): string {
   const { stats } = result;
@@ -44,22 +43,6 @@ export function gameLink(): string {
   return GAME_URL;
 }
 
-/** 카카오톡 피드 메시지: 제목에 점수, 설명에 잡은 두더지·콤보를 담는다 */
-export function kakaoMessage(result: GameResult, opts: { date: Date; daily: boolean }): KakaoShare {
-  const [title, ...rest] = shareText(result, opts).split('\n');
-  return { title, description: rest.join('\n'), buttonTitle: t('share.kakaoButton'), url: gameLink() };
-}
-
-/** 카카오톡으로 결과 이미지와 게임 링크를 한 메시지에 담아 보낸다 */
-export async function shareKakao(image: Blob | null, msg: KakaoShare): Promise<ShareOutcome> {
-  if (!image) return 'failed';
-  try {
-    return (await shareToKakao(image, msg)) ? 'shared' : 'failed';
-  } catch {
-    return 'failed';
-  }
-}
-
 /**
  * 결과 화면을 PNG로 찍는다. 화면이 깜빡이지 않도록 보이지 않는 복제본을 찍으며,
  * 복제본에서는 위에 게임 아이콘과 이름을 붙이고 버튼·폭죽·토스트를 뺀다
@@ -93,24 +76,27 @@ export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   }
 }
 
-export type ShareOutcome = 'sharedImage' | 'shared' | 'cancelled' | 'copied' | 'copiedSaved' | 'failed';
+export type ShareOutcome = 'shared' | 'cancelled' | 'copied' | 'copiedSaved' | 'failed';
 
 /**
- * 결과 이미지를 먼저 보낸다. 게임 링크는 이어서 shareLink로 따로 보낸다.
- * 카카오톡 등은 이미지와 글을 같이 받으면 글을 버리므로, 공유 시트를 열기 전에 결과 글·링크를 클립보드에 넣어 둔다.
- * 파일 공유를 못 하는 브라우저는 결과 글·링크를 바로 공유하고, 공유 시트가 없으면 글·링크를 복사하고 이미지를 내려받는다.
+ * 결과 이미지와 결과 글·게임 링크를 공유 시트 한 번에 함께 보낸다.
+ * 이미지를 받으면 글을 버리는 앱(카카오톡 등)도 있어, 공유 시트를 열기 전에 결과 글·링크를 클립보드에도 넣어 둔다.
+ * 파일 공유를 못 하는 브라우저는 결과 글·링크만 공유하고, 공유 시트가 없으면 글·링크를 복사하고 이미지를 내려받는다.
  */
 export async function shareResult(text: string, image: Blob | null): Promise<ShareOutcome> {
+  const message = `${text}
+${gameLink()}`;
   const file = image && new File([image], 'project-hammer-result.png', { type: 'image/png' });
 
   try {
-    if (file && navigator.canShare?.({ files: [file] })) {
-      await copyText(`${text}\n${gameLink()}`);
-      await navigator.share({ files: [file] });
-      return 'sharedImage';
+    if (file && navigator.canShare?.({ files: [file], text: message })) {
+      await copyText(message);
+      await navigator.share({ files: [file], title: t('app.title'), text: message });
+      return 'shared';
     }
     if (navigator.share) {
-      await navigator.share({ text, url: gameLink() });
+      await copyText(message);
+      await navigator.share({ title: t('app.title'), text, url: gameLink() });
       return 'shared';
     }
   } catch (e) {
@@ -118,25 +104,12 @@ export async function shareResult(text: string, image: Blob | null): Promise<Sha
     // 공유 시트가 실패하면 복사로 넘어간다
   }
 
-  const copied = await copyText(`${text}\n${gameLink()}`);
+  const copied = await copyText(message);
   if (image) {
     download(image, 'project-hammer-result.png');
     return copied ? 'copiedSaved' : 'failed';
   }
   return copied ? 'copied' : 'failed';
-}
-
-/** 결과 이미지를 보낸 뒤 결과 글과 게임 링크를 이어서 보낸다 */
-export async function shareLink(text: string): Promise<ShareOutcome> {
-  try {
-    if (navigator.share) {
-      await navigator.share({ text, url: gameLink() });
-      return 'shared';
-    }
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
-  }
-  return (await copyText(`${text}\n${gameLink()}`)) ? 'copied' : 'failed';
 }
 
 function download(blob: Blob, name: string): void {

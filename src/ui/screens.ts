@@ -7,7 +7,6 @@ import { LANGS, getLang, moleDesc, moleName, t, type Lang, type MessageKey } fro
 import type { SaveData } from '../storage';
 import { SKIN_SETTINGS, THEMES, type Skin, type SkinSetting, type Theme } from '../theme';
 import { createMoleEl, holeInner } from './board';
-import { loadKakao } from '../kakao';
 import { captureResult, type ShareOutcome } from '../share';
 import { confetti, countUp } from './effects';
 import { DECO_ART, HAMMER, ICONS, MORE_ICONS, SKIN_ICONS, STAR_OFF, STAR_ON, THEME_ICONS } from './icons';
@@ -520,8 +519,6 @@ export function resultScreen(opts: {
   onRetry: () => void;
   onHome: () => void;
   onShare: (image: Blob | null) => Promise<ShareOutcome>;
-  onShareLink: () => Promise<ShareOutcome>;
-  onShareKakao: (image: Blob | null) => Promise<ShareOutcome>;
 }): HTMLElement {
   const { result } = opts;
   const { stats } = result;
@@ -558,8 +555,6 @@ export function resultScreen(opts: {
           <button class="btn primary" data-act="retry">${t('result.retry')}</button>
           <button class="btn icon-action" data-act="share" aria-label="${t('result.share')}" title="${t('result.share')}">${MORE_ICONS.share}</button>
           <button class="btn icon-action" data-act="home" aria-label="${t('result.home')}" title="${t('result.home')}">${MORE_ICONS.home}</button>
-          <button class="btn kakao" data-act="kakao">${MORE_ICONS.kakao} ${t('result.kakao')}</button>
-          <button class="btn share-link" data-act="share-link" hidden>${MORE_ICONS.link} ${t('result.shareLink')}</button>
         </div>
       </div>
       <p class="toast" role="status"></p>
@@ -574,50 +569,20 @@ export function resultScreen(opts: {
   // 공유 시트는 클릭 직후에 열어야 하므로, 점수·별 연출이 끝나면 미리 결과 이미지를 찍어 둔다
   let image: Promise<Blob | null> | null = null;
   const capture = () => (image ??= captureResult(el));
-  setTimeout(() => {
-    if (!el.isConnected) return;
-    capture();
-    void loadKakao();
-  }, 1600);
+  setTimeout(() => el.isConnected && capture(), 1600);
   const toast = q('.toast');
   const shareBtn = q('[data-act="share"]') as HTMLButtonElement;
-  const linkBtn = q('[data-act="share-link"]') as HTMLButtonElement;
-  const showOutcome = (outcome: ShareOutcome) => {
-    toast.textContent =
-      outcome === 'sharedImage' ? t('toast.sharedImage')
-      : outcome === 'shared' ? t('toast.shared')
-      : outcome === 'copied' ? t('toast.copied')
-      : outcome === 'copiedSaved' ? t('toast.copiedSaved')
-      : outcome === 'failed' ? t('toast.failed')
-      : '';
-  };
   shareBtn.addEventListener('click', async () => {
     shareBtn.disabled = true;
     toast.textContent = t('toast.preparing');
     const outcome = await opts.onShare(await capture());
-    showOutcome(outcome);
-    // 이미지를 보냈으면 게임 링크를 이어서 보낼 버튼을 꺼낸다(공유 시트는 클릭마다 한 번만 열 수 있다)
-    if (outcome === 'sharedImage') {
-      linkBtn.hidden = false;
-      linkBtn.focus();
-    }
+    toast.textContent =
+      outcome === 'shared' ? t('toast.shared')
+      : outcome === 'copied' ? t('toast.copied')
+      : outcome === 'copiedSaved' ? t('toast.copiedSaved')
+      : outcome === 'failed' ? t('toast.failed')
+      : '';
     shareBtn.disabled = false;
-  });
-  // 카카오톡은 이미지와 "나도 도전하기" 링크 버튼이 한 메시지에 담긴다
-  const kakaoBtn = q('[data-act="kakao"]') as HTMLButtonElement;
-  kakaoBtn.addEventListener('click', async () => {
-    kakaoBtn.disabled = true;
-    toast.textContent = t('toast.preparing');
-    const outcome = await opts.onShareKakao(await capture());
-    toast.textContent = outcome === 'failed' ? t('toast.kakaoFailed') : '';
-    kakaoBtn.disabled = false;
-  });
-  linkBtn.addEventListener('click', async () => {
-    linkBtn.disabled = true;
-    const outcome = await opts.onShareLink();
-    showOutcome(outcome);
-    if (outcome !== 'cancelled' && outcome !== 'failed') linkBtn.hidden = true;
-    linkBtn.disabled = false;
   });
   setTimeout(() => q('[data-act="retry"]').focus(), 0);
   return el;
