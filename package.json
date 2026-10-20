@@ -17,5 +17,8 @@
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.4"
   },
-  "packageManager": "pnpm@12.8.1"
+  "packageManager": "pnpm@12.8.1",
+  "dependencies": {
+    "html-to-image": "1.11.13"
+  }
 }

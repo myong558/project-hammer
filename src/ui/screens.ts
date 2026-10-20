@@ -7,6 +7,7 @@ import { LANGS, getLang, moleDesc, moleName, t, type Lang, type MessageKey } fro
 import type { SaveData } from '../storage';
 import { SKIN_SETTINGS, THEMES, type Skin, type SkinSetting, type Theme } from '../theme';
 import { createMoleEl, holeInner } from './board';
+import { captureResult, type ShareOutcome } from '../share';
 import { confetti, countUp } from './effects';
 import { DECO_ART, HAMMER, ICONS, MORE_ICONS, SKIN_ICONS, STAR_OFF, STAR_ON, THEME_ICONS } from './icons';
 
@@ -517,7 +518,7 @@ export function resultScreen(opts: {
   missionId: MissionId;
   onRetry: () => void;
   onHome: () => void;
-  onShare: () => Promise<boolean>;
+  onShare: (image: Blob | null) => Promise<ShareOutcome>;
 }): HTMLElement {
   const { result } = opts;
   const { stats } = result;
@@ -565,9 +566,23 @@ export function resultScreen(opts: {
 
   q('[data-act="retry"]').addEventListener('click', opts.onRetry);
   q('[data-act="home"]').addEventListener('click', opts.onHome);
-  q('[data-act="share"]').addEventListener('click', async () => {
-    const ok = await opts.onShare();
-    q('.toast').textContent = ok ? t('toast.copied') : t('toast.failed');
+  // 공유 시트는 클릭 직후에 열어야 하므로, 점수·별 연출이 끝나면 미리 결과 이미지를 찍어 둔다
+  let image: Promise<Blob | null> | null = null;
+  const capture = () => (image ??= captureResult(el));
+  setTimeout(() => el.isConnected && capture(), 1600);
+  const shareBtn = q('[data-act="share"]') as HTMLButtonElement;
+  shareBtn.addEventListener('click', async () => {
+    shareBtn.disabled = true;
+    const toast = q('.toast');
+    toast.textContent = t('toast.preparing');
+    const outcome = await opts.onShare(await capture());
+    toast.textContent =
+      outcome === 'shared' ? t('toast.shared')
+      : outcome === 'copied' ? t('toast.copied')
+      : outcome === 'copiedSaved' ? t('toast.copiedSaved')
+      : outcome === 'failed' ? t('toast.failed')
+      : '';
+    shareBtn.disabled = false;
   });
   setTimeout(() => q('[data-act="retry"]').focus(), 0);
   return el;

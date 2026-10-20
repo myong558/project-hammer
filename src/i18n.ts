@@ -93,7 +93,10 @@ const ko = {
   'result.retry': '다시 하기',
   'result.share': '결과 공유',
   'result.home': '메인으로',
-  'toast.copied': '결과를 복사했어요! 친구에게 붙여 넣어 보세요',
+  'toast.copied': '결과와 게임 링크를 복사했어요! 친구에게 붙여 넣어 보세요',
+  'toast.copiedSaved': '결과 이미지를 저장하고 링크를 복사했어요',
+  'toast.shared': '공유했어요!',
+  'toast.preparing': '결과 이미지를 만드는 중…',
   'toast.failed': '복사하지 못했어요',
 
   'goal.first': '첫 기록 등록! 이제 이 점수를 넘어 보세요',
@@ -223,7 +226,10 @@ const en: Record<MessageKey, string> = {
   'result.retry': 'Play again',
   'result.share': 'Share',
   'result.home': 'Main menu',
-  'toast.copied': 'Copied! Paste it to a friend',
+  'toast.copied': 'Copied your result and the game link! Paste it to a friend',
+  'toast.copiedSaved': 'Saved the result image and copied the link',
+  'toast.shared': 'Shared!',
+  'toast.preparing': 'Making your result image…',
   'toast.failed': "Couldn't copy",
 
   'goal.first': 'First record set! Now try to beat it',
