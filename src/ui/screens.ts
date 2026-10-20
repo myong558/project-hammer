@@ -519,6 +519,7 @@ export function resultScreen(opts: {
   onRetry: () => void;
   onHome: () => void;
   onShare: (image: Blob | null) => Promise<ShareOutcome>;
+  onShareLink: () => Promise<ShareOutcome>;
 }): HTMLElement {
   const { result } = opts;
   const { stats } = result;
@@ -555,6 +556,7 @@ export function resultScreen(opts: {
           <button class="btn primary" data-act="retry">${t('result.retry')}</button>
           <button class="btn icon-action" data-act="share" aria-label="${t('result.share')}" title="${t('result.share')}">${MORE_ICONS.share}</button>
           <button class="btn icon-action" data-act="home" aria-label="${t('result.home')}" title="${t('result.home')}">${MORE_ICONS.home}</button>
+          <button class="btn share-link" data-act="share-link" hidden>${MORE_ICONS.link} ${t('result.shareLink')}</button>
         </div>
       </div>
       <p class="toast" role="status"></p>
@@ -572,17 +574,34 @@ export function resultScreen(opts: {
   setTimeout(() => el.isConnected && capture(), 1600);
   const toast = q('.toast');
   const shareBtn = q('[data-act="share"]') as HTMLButtonElement;
-  shareBtn.addEventListener('click', async () => {
-    shareBtn.disabled = true;
-    toast.textContent = t('toast.preparing');
-    const outcome = await opts.onShare(await capture());
+  const linkBtn = q('[data-act="share-link"]') as HTMLButtonElement;
+  const showOutcome = (outcome: ShareOutcome) => {
     toast.textContent =
-      outcome === 'shared' ? t('toast.shared')
+      outcome === 'sharedImage' ? t('toast.sharedImage')
+      : outcome === 'shared' ? t('toast.shared')
       : outcome === 'copied' ? t('toast.copied')
       : outcome === 'copiedSaved' ? t('toast.copiedSaved')
       : outcome === 'failed' ? t('toast.failed')
       : '';
+  };
+  shareBtn.addEventListener('click', async () => {
+    shareBtn.disabled = true;
+    toast.textContent = t('toast.preparing');
+    const outcome = await opts.onShare(await capture());
+    showOutcome(outcome);
+    // 이미지를 보냈으면 게임 링크를 이어서 보낼 버튼을 꺼낸다(공유 시트는 클릭마다 한 번만 열 수 있다)
+    if (outcome === 'sharedImage') {
+      linkBtn.hidden = false;
+      linkBtn.focus();
+    }
     shareBtn.disabled = false;
+  });
+  linkBtn.addEventListener('click', async () => {
+    linkBtn.disabled = true;
+    const outcome = await opts.onShareLink();
+    showOutcome(outcome);
+    if (outcome !== 'cancelled' && outcome !== 'failed') linkBtn.hidden = true;
+    linkBtn.disabled = false;
   });
   setTimeout(() => q('[data-act="retry"]').focus(), 0);
   return el;

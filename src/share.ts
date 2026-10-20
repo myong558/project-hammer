@@ -76,27 +76,25 @@ export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   }
 }
 
-export type ShareOutcome = 'shared' | 'cancelled' | 'copied' | 'copiedSaved' | 'failed';
+export type ShareOutcome = 'sharedImage' | 'shared' | 'cancelled' | 'copied' | 'copiedSaved' | 'failed';
 
 /**
- * 결과 이미지와 결과 글·게임 링크를 공유 시트 한 번에 함께 보낸다.
- * 이미지를 받으면 글을 버리는 앱(카카오톡 등)도 있어, 공유 시트를 열기 전에 결과 글·링크를 클립보드에도 넣어 둔다.
+ * 두 번에 나눠 보낸다: 먼저 결과 이미지만 보내고, 게임 링크는 이어서 shareLink로 한 번 더 보낸다.
+ * 카카오톡 등은 이미지와 글을 같이 받으면 글을 버리기 때문이다. 공유 시트를 열기 전에 결과 글·링크를 클립보드에도 넣어 둔다.
  * 파일 공유를 못 하는 브라우저는 결과 글·링크만 공유하고, 공유 시트가 없으면 글·링크를 복사하고 이미지를 내려받는다.
  */
 export async function shareResult(text: string, image: Blob | null): Promise<ShareOutcome> {
-  const message = `${text}
-${gameLink()}`;
+  const message = `${text}\n${gameLink()}`;
   const file = image && new File([image], 'project-hammer-result.png', { type: 'image/png' });
 
   try {
-    if (file && navigator.canShare?.({ files: [file], text: message })) {
+    if (file && navigator.canShare?.({ files: [file] })) {
       await copyText(message);
-      await navigator.share({ files: [file], title: t('app.title'), text: message });
-      return 'shared';
+      await navigator.share({ files: [file] });
+      return 'sharedImage';
     }
     if (navigator.share) {
-      await copyText(message);
-      await navigator.share({ title: t('app.title'), text, url: gameLink() });
+      await navigator.share({ title: t('app.title'), text: message });
       return 'shared';
     }
   } catch (e) {
@@ -110,6 +108,21 @@ ${gameLink()}`;
     return copied ? 'copiedSaved' : 'failed';
   }
   return copied ? 'copied' : 'failed';
+}
+
+/** 이미지를 보낸 뒤, 결과 글과 게임 링크를 한 번 더 보낸다 */
+export async function shareLink(text: string): Promise<ShareOutcome> {
+  // 링크를 글 안에 넣어 한 덩어리로 보낸다. url을 따로 주면 iOS에서 앱에 따라 글이나 링크 하나가 빠진다
+  const message = `${text}\n${gameLink()}`;
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: t('app.title'), text: message });
+      return 'shared';
+    }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
+  }
+  return (await copyText(message)) ? 'copied' : 'failed';
 }
 
 function download(blob: Blob, name: string): void {
