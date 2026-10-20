@@ -2394,6 +2394,15 @@ button.dex-item:focus-visible {
   }
 }
 
+/* 설정 맨 아래 버전 표시: 업데이트가 적용됐는지 확인용 */
+.app-version {
+  margin: 0.6em 0 0;
+  font-size: max(16px, 0.65em);
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 /* 설정의 게임 링크 공유 */
 .share-section .btn {
   flex-direction: row;

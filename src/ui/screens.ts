@@ -373,6 +373,7 @@ function settingsPanel(opts: StartOptions): HTMLElement {
           </div>
         </section>
       </div>
+      <p class="app-version">${t('settings.version')} v${__APP_VERSION__}${__APP_COMMIT__ ? ` · ${__APP_COMMIT__}` : ''}</p>
     </div>`);
 
   const select = (attr: string, value: string) =>
