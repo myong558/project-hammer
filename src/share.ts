@@ -77,6 +77,7 @@ export type ShareOutcome = 'sharedImage' | 'shared' | 'cancelled' | 'copied' | '
 
 /**
  * 결과 이미지를 먼저 보낸다. 게임 링크는 이어서 shareLink로 따로 보낸다.
+ * 카카오톡 등은 이미지와 글을 같이 받으면 글을 버리므로, 공유 시트를 열기 전에 결과 글·링크를 클립보드에 넣어 둔다.
  * 파일 공유를 못 하는 브라우저는 결과 글·링크를 바로 공유하고, 공유 시트가 없으면 글·링크를 복사하고 이미지를 내려받는다.
  */
 export async function shareResult(text: string, image: Blob | null): Promise<ShareOutcome> {
@@ -84,6 +85,8 @@ export async function shareResult(text: string, image: Blob | null): Promise<Sha
 
   try {
     if (file && navigator.canShare?.({ files: [file] })) {
+      await copyText(`${text}
+${gameLink()}`);
       await navigator.share({ files: [file] });
       return 'sharedImage';
     }

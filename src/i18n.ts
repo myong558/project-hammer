@@ -97,7 +97,7 @@ const ko = {
   'toast.copied': '결과와 게임 링크를 복사했어요! 친구에게 붙여 넣어 보세요',
   'toast.copiedSaved': '결과 이미지를 저장하고 링크를 복사했어요',
   'toast.shared': '공유했어요!',
-  'toast.sharedImage': '이미지를 보냈어요! 이어서 게임 링크도 보내 주세요',
+  'toast.sharedImage': '이미지를 보냈어요! 게임 링크는 복사해 두었으니 대화창에 붙여 넣거나 아래 버튼으로 보내 주세요',
   'toast.preparing': '결과 이미지를 만드는 중…',
   'toast.failed': '복사하지 못했어요',
 
@@ -232,7 +232,7 @@ const en: Record<MessageKey, string> = {
   'toast.copied': 'Copied your result and the game link! Paste it to a friend',
   'toast.copiedSaved': 'Saved the result image and copied the link',
   'toast.shared': 'Shared!',
-  'toast.sharedImage': 'Image sent! Now send the game link too',
+  'toast.sharedImage': 'Image sent! The game link is copied — paste it in the chat or send it below',
   'toast.preparing': 'Making your result image…',
   'toast.failed': "Couldn't copy",
 
