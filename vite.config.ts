@@ -3,7 +3,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   base: './',
-  server: { port: 5173, open: true },
+  server: { port: 5173, open: false },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',

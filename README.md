@@ -234,7 +234,7 @@ project-hammer/
 
 ```bash
 pnpm install
-pnpm run dev      # 개발 서버 (http://localhost:5173, 브라우저 자동 열림)
+pnpm run dev      # 개발 서버 (http://localhost:5173)
 pnpm run test     # 단위 테스트
 pnpm run build    # 타입 검사 후 dist/ 에 정적 빌드
 pnpm run preview  # 빌드 결과 미리보기
