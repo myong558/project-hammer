@@ -42,18 +42,18 @@ export function gameLink(): string {
 }
 
 /**
- * 결과 화면을 PNG로 찍는다. 화면이 깜빡이지 않도록 화면 밖에 복제본을 두고 찍으며,
- * 복제본에서는 버튼 자리에 게임 이름과 링크를 넣고 폭죽·토스트는 뺀다
+ * 결과 화면을 PNG로 찍는다. 화면이 깜빡이지 않도록 보이지 않는 복제본을 찍으며,
+ * 복제본에서는 위에 게임 아이콘과 이름을 붙이고 버튼·폭죽·토스트를 뺀다
  */
 export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   const { toBlob } = await import('html-to-image');
   const clone = el.cloneNode(true) as HTMLElement;
   clone.classList.add('capturing');
-  clone.querySelectorAll('.toast, .confetti-layer').forEach((n) => n.remove());
-  const footer = document.createElement('p');
-  footer.className = 'share-footer';
-  footer.innerHTML = `<b>${t('app.title')} 🔨</b><span>${gameLink()}</span>`;
-  clone.querySelector('.actions')?.replaceWith(footer);
+  clone.querySelectorAll('.actions, .toast, .confetti-layer').forEach((n) => n.remove());
+  const brand = document.createElement('p');
+  brand.className = 'share-brand';
+  brand.innerHTML = `<img src="${new URL('favicon.svg', document.baseURI).href}" alt="">${t('app.title')}`;
+  clone.querySelector('.main-col')?.prepend(brand);
   // 복제본은 원래 자리에 그대로 두되, 감싼 상자를 완전히 잘라 화면에는 보이지 않게 한다
   const holder = document.createElement('div');
   holder.setAttribute('aria-hidden', 'true');
@@ -73,24 +73,22 @@ export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   }
 }
 
-export type ShareOutcome = 'shared' | 'cancelled' | 'copied' | 'copiedSaved' | 'failed';
+export type ShareOutcome = 'sharedImage' | 'shared' | 'cancelled' | 'copied' | 'copiedSaved' | 'failed';
 
 /**
- * 시스템 공유 시트로 결과 이미지와 링크를 보낸다.
- * 파일 공유를 못 하는 브라우저는 링크만 공유하고, 공유 시트가 없으면 글·링크를 복사하고 이미지를 내려받는다.
+ * 결과 이미지를 먼저 보낸다. 게임 링크는 이어서 shareLink로 따로 보낸다.
+ * 파일 공유를 못 하는 브라우저는 결과 글·링크를 바로 공유하고, 공유 시트가 없으면 글·링크를 복사하고 이미지를 내려받는다.
  */
 export async function shareResult(text: string, image: Blob | null): Promise<ShareOutcome> {
-  const url = gameLink();
-  const message = `${text}\n${url}`;
   const file = image && new File([image], 'project-hammer-result.png', { type: 'image/png' });
 
   try {
     if (file && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], text: message });
-      return 'shared';
+      await navigator.share({ files: [file] });
+      return 'sharedImage';
     }
     if (navigator.share) {
-      await navigator.share({ text, url });
+      await navigator.share({ text, url: gameLink() });
       return 'shared';
     }
   } catch (e) {
@@ -98,12 +96,27 @@ export async function shareResult(text: string, image: Blob | null): Promise<Sha
     // 공유 시트가 실패하면 복사로 넘어간다
   }
 
-  const copied = await copyText(message);
+  const copied = await copyText(`${text}
+${gameLink()}`);
   if (image) {
     download(image, 'project-hammer-result.png');
     return copied ? 'copiedSaved' : 'failed';
   }
   return copied ? 'copied' : 'failed';
+}
+
+/** 결과 이미지를 보낸 뒤 결과 글과 게임 링크를 이어서 보낸다 */
+export async function shareLink(text: string): Promise<ShareOutcome> {
+  try {
+    if (navigator.share) {
+      await navigator.share({ text, url: gameLink() });
+      return 'shared';
+    }
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
+  }
+  return (await copyText(`${text}
+${gameLink()}`)) ? 'copied' : 'failed';
 }
 
 function download(blob: Blob, name: string): void {
