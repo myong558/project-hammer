@@ -29,6 +29,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff2,mp3,ogg,wav}'],
+        // 링크 미리보기 이미지는 게임에서 쓰지 않으니 오프라인 캐시에 넣지 않는다
+        globIgnores: ['og-image.png'],
       },
       devOptions: { enabled: true },
     }),
