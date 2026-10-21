@@ -51,6 +51,8 @@ export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   const { toBlob } = await import('html-to-image');
   const clone = el.cloneNode(true) as HTMLElement;
   clone.classList.add('capturing');
+  // 등록 카드 때문에 숨겼던 다음 목표·잡은 두더지 목록은 공유 이미지에 다시 넣는다
+  clone.classList.remove('has-entry');
   clone.querySelectorAll('.actions, .toast, .confetti-layer, .rank-entry').forEach((n) => n.remove());
   const brand = document.createElement('p');
   brand.className = 'share-brand';

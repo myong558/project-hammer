@@ -473,7 +473,8 @@ function shortDate(key: string): string {
 function rankEntryForm(opts: {
   title: string;
   name: string;
-  hint?: string;
+  /** 이름 규칙 안내를 보일지. 결과 화면에서는 공간이 좁아 숨긴다(자판에서 소문자·숫자는 저절로 걸러진다) */
+  compact?: boolean;
   onSubmit: (name: string) => Promise<number>;
   onView?: (place: number | null) => void;
 }): HTMLElement {
@@ -484,7 +485,7 @@ function rankEntryForm(opts: {
         <input name="name" value="${opts.name}" maxlength="${NAME_MAX}" placeholder="AAAAA" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="${t('ranking.nameLabel')}">
         <button class="btn primary" type="submit">${t('ranking.submit')}</button>
       </div>
-      <p class="rank-entry-hint">${t('ranking.nameLabel')}${opts.hint ? `<br>${opts.hint}` : ''}</p>
+      <p class="rank-entry-hint">${opts.compact ? '' : t('ranking.nameLabel')}</p>
     </form>`);
   const input = el.querySelector('input')!;
   const submit = el.querySelector<HTMLButtonElement>('[type="submit"]')!;
@@ -515,7 +516,7 @@ function rankEntryForm(opts: {
       sending = false;
       input.disabled = false;
       sync();
-      hint.innerHTML = `<span class="rank-error">${t('ranking.failed')}</span><br>${hintText}`;
+      hint.innerHTML = `<span class="rank-error">${t('ranking.failed')}</span>${hintText ? `<br>${hintText}` : ''}`;
       return;
     }
     el.classList.add('done');
@@ -523,7 +524,8 @@ function rankEntryForm(opts: {
       place < 0
         ? `<p class="rank-entry-title" role="status">${MORE_ICONS.trophy}<span>${t('ranking.missed')}</span></p>`
         : `<p class="rank-entry-title" role="status">${MORE_ICONS.trophy}<span>${t('ranking.done', { n: place + 1 })}</span></p>`;
-    if (opts.onView) el.insertAdjacentHTML('beforeend', `<button class="btn" type="button" data-view>${t('ranking.open')}</button>`);
+    // 등록한 뒤에는 순위표를 보러 가는 것이 다음 할 일이므로 강조 버튼으로 크게 둔다
+    if (opts.onView) el.insertAdjacentHTML('beforeend', `<button class="btn primary rank-view" type="button" data-view>${MORE_ICONS.trophy}<span>${t('ranking.open')}</span></button>`);
     const view = el.querySelector<HTMLButtonElement>('[data-view]');
     view?.addEventListener('click', () => opts.onView!(place < 0 ? null : place));
     view?.focus();
@@ -798,12 +800,14 @@ export function resultScreen(opts: {
         ? rankEntryForm({
             title: t('ranking.enter', { n: place + 1 }),
             name: typed ?? opts.ranking.save.playerName,
-            hint: t('ranking.later'),
+            compact: true,
             onSubmit: (name) => opts.ranking.register(mode, name, result.score),
             onView: (at) => openRanking(el, opts.ranking, mode, at),
           })
         : null;
     if (entryForm) q('.kills').before(entryForm);
+    // 등록 카드가 있는 동안에는 다음 목표 문구를 빼서 아래쪽 버튼이 잘리지 않게 한다
+    el.classList.toggle('has-entry', !!entryForm);
     if (hadFocus) (entryForm?.querySelector<HTMLButtonElement>('[type="submit"]:not(:disabled)') ?? q('[data-act="retry"]')).focus();
   };
   showEntry(opts.ranking.consider(mode, result.score));
