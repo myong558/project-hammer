@@ -72,7 +72,7 @@ const ko = {
   'pause.restart': '다시 시작',
   'pause.quit': '메인으로',
 
-  'segment.main': '본게임',
+  'segment.main': '폭탄 주의!',
   'segment.melee': '혼전',
   'segment.rush': '러시',
   'segment.spurt': '라스트 스퍼트! 점수 x1.5',
@@ -230,7 +230,7 @@ const en: Record<MessageKey, string> = {
   'pause.restart': 'Restart',
   'pause.quit': 'Main menu',
 
-  'segment.main': 'Game on!',
+  'segment.main': 'Bombs ahead!',
   'segment.melee': 'Chaos!',
   'segment.rush': 'Rush!',
   'segment.spurt': 'Last spurt! Score x1.5',
