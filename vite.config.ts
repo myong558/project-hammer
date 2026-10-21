@@ -1,22 +1,14 @@
-import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// 설정 팝업에 보여 줄 버전: package.json 버전과 빌드한 커밋
+// 설정 팝업에 보여 줄 버전(package.json의 vX.Y.Z)
 const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
-let commit = '';
-try {
-  commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-} catch {
-  // git이 없는 곳에서 빌드하면 커밋은 비워 둔다
-}
 
 export default defineConfig({
   base: './',
   define: {
     __APP_VERSION__: JSON.stringify(version),
-    __APP_COMMIT__: JSON.stringify(commit),
   },
   server: { port: 5173, open: false },
   plugins: [

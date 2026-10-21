@@ -135,6 +135,7 @@ export function startScreen(opts: StartOptions): HTMLElement {
       <button class="corner left lang-btn" data-lang="${otherLang}" aria-label="${t('lang.label')}: ${LANG_LABEL[lang]} → ${LANG_LABEL[otherLang]}">
         ${ICONS.globe}<span>${LANG_LABEL[otherLang]}</span>
       </button>
+      <button class="corner right icon-btn rank-btn" data-ranking aria-label="${t('ranking.open')}">${MORE_ICONS.trophy}${pendingIn('classic') || pendingIn('daily') ? `<i class="rank-dot" role="img" aria-label="${t('ranking.newBadge')}"></i>` : ''}</button>
       <button class="corner right icon-btn settings-btn" aria-label="${t('settings.open')}">${ICONS.gear}</button>
       <div class="col main-col">
         ${holeMarkup('title-hole')}
@@ -149,7 +150,6 @@ export function startScreen(opts: StartOptions): HTMLElement {
           </button>
         </div>
         <p class="best">${t('start.best', { best: save.best, daily: dailyBest })}</p>
-        <button class="btn rank-btn" data-ranking>${MORE_ICONS.trophy}<span>${t('ranking.title')}</span>${pendingIn('classic') || pendingIn('daily') ? `<i class="rank-dot" role="img" aria-label="${t('ranking.newBadge')}"></i>` : ''}</button>
       </div>
       <div class="col side-col">
         <section class="dex" aria-label="${t('dex.title')}">
@@ -384,7 +384,7 @@ function settingsPanel(opts: StartOptions): HTMLElement {
           </div>
         </section>
       </div>
-      <p class="app-version">${t('settings.version')} v${__APP_VERSION__}${__APP_COMMIT__ ? ` · ${__APP_COMMIT__}` : ''}</p>
+      <p class="app-version">${t('settings.version')} v${__APP_VERSION__}</p>
     </div>`);
 
   const select = (attr: string, value: string) =>
@@ -545,7 +545,7 @@ function openRanking(host: HTMLElement, view: RankingView, start: Mode, mark: nu
       <h2>${MORE_ICONS.trophy} ${t('ranking.title')}</h2>
       <div class="seg" role="group">
         <button data-board="classic">${t('mode.classic')}</button>
-        <button data-board="daily">${t('start.daily')}</button>
+        <button data-board="daily">${t('ranking.daily')}</button>
       </div>
       <p class="note rank-note"></p>
       <div class="rank-pending"></div>

@@ -1969,8 +1969,15 @@ button.dex-item:focus-visible {
 .numbers {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.35em;
+}
+
+/* 아주 좁은 화면(320px 등)에서는 영어 이름(Accuracy 등)이 칸을 넘으므로 2×2로 */
+@media (max-width: 350px) {
+  .numbers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .numbers div {
@@ -2158,7 +2165,7 @@ button.dex-item:focus-visible {
 .deco span:nth-child(5) { right: 1%; bottom: 1.5%; transform: rotate(8deg); }
 .deco span:nth-child(6) { left: 2%; bottom: 1.5%; width: 5%; }
 
-/* ---------- 시작 화면 모서리: 언어(좌상단) · 설정(우상단) ---------- */
+/* ---------- 시작 화면 모서리: 언어(좌상단) · 랭킹·설정(우상단) ---------- */
 
 .start {
   padding-top: 3.2em;
@@ -3609,6 +3616,17 @@ body {
   line-height: 1.15;
 }
 
+/* 좁은 휴대폰에서 영어 이름표(Combo)가 칸 테두리를 넘지 않게 안쪽 여백을 줄인다 */
+@media (max-width: 380px) {
+  .stat {
+    padding-inline: 0.3em;
+  }
+
+  .stat .label {
+    letter-spacing: -0.02em;
+  }
+}
+
 .stat b {
   line-height: 1.05;
 }
@@ -4100,17 +4118,13 @@ body {
 
 /* ---------- 랭킹: 메인의 랭킹 버튼 · 결과 화면의 등록 카드 · 랭킹 창 ---------- */
 
-.rank-btn {
-  position: relative;
-  flex-direction: row;
-  justify-content: center;
-  gap: 0.4em;
-  width: fit-content;
-  margin-inline: auto;
-  padding: 0.35em 1.1em 0.35em 0.8em;
-  border-radius: 999px;
-  font-size: max(18px, 0.9em);
-  box-shadow: 0 0.18em 0 var(--border);
+/* 우상단 설정 버튼 바로 왼쪽(설정 버튼 폭 2.3em + 간격) */
+.corner.rank-btn {
+  right: calc(0.6em + 2.3em + 0.5em);
+}
+
+.rank-btn:hover {
+  transform: none;
 }
 
 .rank-btn .icon,
