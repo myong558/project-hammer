@@ -8,12 +8,14 @@ import type { MissionId } from './game/missions';
 import type { GameEvent, GameResult, MoleKind } from './game/types';
 import { setLang, t } from './i18n';
 import { shareLink, shareResult, shareText } from './share';
+import { fetchBoard, submitEntry } from './online';
+import { boardEntries, clearPending, keepPending, placeOf, type RankEntry } from './ranking';
 import { emptyProgress, loadSave, writeSave } from './storage';
 import { applySkin, applyTheme, resolveSkin } from './theme';
 import { Board } from './ui/board';
 import { Effects, Hammer } from './ui/effects';
 import { Hud } from './ui/hud';
-import { gameScreen, resultScreen, startScreen, type Mode } from './ui/screens';
+import { gameScreen, resultScreen, startScreen, type Mode, type RankingView } from './ui/screens';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const save = loadSave();
@@ -42,6 +44,48 @@ function vibrate(pattern: number | number[]): void {
   if (save.shake) navigator.vibrate?.(pattern);
 }
 
+function cacheBoard(mode: Mode, today: string, entries: RankEntry[]): void {
+  if (mode === 'classic') save.rankings.classic = entries;
+  else save.rankings.daily = { date: today, entries };
+  writeSave(save);
+}
+
+/** 순위표 보기·등록. day는 그 판을 시작한 날로, 오늘의 챌린지 순위표가 어느 날 것인지 정한다 */
+function rankingView(day: Date): RankingView {
+  const today = dateKey(day);
+  return {
+    save,
+    today,
+    todayLabel: todayLabel(day),
+    // 온라인 순위표를 받아 기기에 남겨 둔다. 오프라인이면 남겨 둔 순위를 그대로 보여 준다
+    async refresh(mode) {
+      try {
+        cacheBoard(mode, today, await fetchBoard(mode, today));
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    consider(mode, score) {
+      const place = placeOf(boardEntries(save.rankings, mode, today), score);
+      if (place >= 0) {
+        keepPending(save.pending, mode, today, score);
+        writeSave(save);
+      }
+      return place;
+    },
+    async register(mode, name, score) {
+      save.playerName = name;
+      const { place, entries } = await submitEntry(mode, today, { name, score, date: today });
+      cacheBoard(mode, today, entries);
+      // 그사이 다른 사람들에게 밀려 10위 밖이 됐어도 더 올릴 수 없으므로 대기에서 지운다
+      clearPending(save.pending, mode, score);
+      writeSave(save);
+      return place;
+    },
+  };
+}
+
 function showStart(settings?: 'open' | 'reset', settingsFocus?: string, opening = false): void {
   const today = new Date();
   const todaySkin = resolveSkin('auto', today);
@@ -55,6 +99,7 @@ function showStart(settings?: 'open' | 'reset', settingsFocus?: string, opening 
       settings,
       settingsFocus,
       opening,
+      ranking: rankingView(today),
       onPlay: play,
       onToggle(key) {
         save[key] = !save[key];
@@ -343,11 +388,14 @@ function showResult(result: GameResult, missionId: MissionId, mode: Mode, date: 
       onHome: () => showStart(),
       onShare: (image) => shareResult(shareText(result, { date, daily }), image),
       onShareLink: () => shareLink(shareText(result, { date, daily })),
+      ranking: rankingView(date),
     }),
   );
   if (isRecord) sound.play('record');
 
   const onKey = (e: KeyboardEvent) => {
+    // 이름을 치는 중이거나 랭킹 창·등록 카드 안에서 누른 키는 그쪽에 맡긴다
+    if ((e.target as Element | null)?.closest?.('input, .rank-entry, .modal')) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       play(mode);

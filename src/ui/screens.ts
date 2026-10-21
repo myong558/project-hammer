@@ -5,6 +5,7 @@ import type { GameResult, MoleKind } from '../game/types';
 import type { MissionId } from '../game/missions';
 import { LANGS, getLang, moleDesc, moleName, t, type Lang, type MessageKey } from '../i18n';
 import type { SaveData } from '../storage';
+import { NAME_MAX, RANK_SIZE, boardEntries, cleanName, isValidName, pendingScore, placeOf } from '../ranking';
 import { SKIN_SETTINGS, THEMES, type Skin, type SkinSetting, type Theme } from '../theme';
 import { createMoleEl, holeInner } from './board';
 import { captureResult, shareLink, type ShareOutcome } from '../share';
@@ -113,6 +114,7 @@ export interface StartOptions {
   onTheme: (theme: Theme) => void;
   onSkin: (skin: SkinSetting) => void;
   onReset: () => void;
+  ranking: RankingView;
   /** 다시 그린 뒤 설정 창을 열어 둘지. 'reset'이면 초기화 완료 문구도 보인다 */
   settings?: 'open' | 'reset';
   /** 페이지에 처음 들어왔을 때만 오프닝 연출을 튼다 */
@@ -127,6 +129,7 @@ export function startScreen(opts: StartOptions): HTMLElement {
   const dailyBest = save.daily?.date === opts.today ? save.daily.best : 0;
   const lang = getLang();
   const otherLang = LANGS.find((l) => l !== lang)!;
+  const pendingIn = (m: Mode) => pendingScore(save.rankings, save.pending, m, opts.today) > 0;
   const el = html(`
     <main class="screen start">
       <button class="corner left lang-btn" data-lang="${otherLang}" aria-label="${t('lang.label')}: ${LANG_LABEL[lang]} → ${LANG_LABEL[otherLang]}">
@@ -146,6 +149,7 @@ export function startScreen(opts: StartOptions): HTMLElement {
           </button>
         </div>
         <p class="best">${t('start.best', { best: save.best, daily: dailyBest })}</p>
+        <button class="btn rank-btn" data-ranking>${MORE_ICONS.trophy}<span>${t('ranking.title')}</span>${pendingIn('classic') || pendingIn('daily') ? `<i class="rank-dot" role="img" aria-label="${t('ranking.newBadge')}"></i>` : ''}</button>
       </div>
       <div class="col side-col">
         <section class="dex" aria-label="${t('dex.title')}">
@@ -175,6 +179,13 @@ export function startScreen(opts: StartOptions): HTMLElement {
     b.addEventListener('click', () => {
       const found = MOLE_ORDER.filter((k) => dex.has(k));
       openDexBrowser(el, found, found.indexOf(b.dataset.kind as MoleKind), save);
+    }),
+  );
+
+  // 등록 대기 기록이 있는 쪽을 먼저 연다. 대기 기록을 모두 올리면 버튼의 점을 지운다
+  el.querySelector('[data-ranking]')!.addEventListener('click', () =>
+    openRanking(el, opts.ranking, pendingIn('daily') && !pendingIn('classic') ? 'daily' : 'classic', null, () => {
+      if (!pendingIn('classic') && !pendingIn('daily')) el.querySelector('.rank-dot')?.remove();
     }),
   );
 
@@ -435,6 +446,192 @@ function settingsPanel(opts: StartOptions): HTMLElement {
   return el;
 }
 
+/* ---------- 랭킹 ---------- */
+
+export interface RankingView {
+  save: SaveData;
+  /** 오늘(YYYY-MM-DD)과 화면에 쓸 날짜(M/D) */
+  today: string;
+  todayLabel: string;
+  /** 온라인 순위표를 받아 save.rankings에 남긴다. 실패(오프라인 등)하면 false */
+  refresh: (mode: Mode) => Promise<boolean>;
+  /** 지금 알고 있는 순위표에서 이 점수의 자리(0부터, 밖이면 -1). 안에 들면 등록 대기로 남긴다 */
+  consider: (mode: Mode, score: number) => number;
+  /** 온라인 순위표에 이름을 올리고 순위(0부터)를 돌려준다. 그사이 밀려났으면 -1, 연결 실패면 예외 */
+  register: (mode: Mode, name: string, score: number) => Promise<number>;
+}
+
+function shortDate(key: string): string {
+  const [, m, d] = key.split('-');
+  return `${Number(m)}/${Number(d)}`;
+}
+
+/**
+ * 이름 입력 카드. 영문 대문자 5자까지만 받고, 지난번 이름을 미리 채운다.
+ * 등록하면 그 자리에 순위와 랭킹 보기 버튼을 보여 준다
+ */
+function rankEntryForm(opts: {
+  title: string;
+  name: string;
+  hint?: string;
+  onSubmit: (name: string) => Promise<number>;
+  onView?: (place: number | null) => void;
+}): HTMLElement {
+  const el = html(`
+    <form class="rank-entry" novalidate>
+      <p class="rank-entry-title">${MORE_ICONS.trophy}<span>${opts.title}</span></p>
+      <div class="rank-entry-row">
+        <input name="name" value="${opts.name}" maxlength="${NAME_MAX}" placeholder="AAAAA" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="${t('ranking.nameLabel')}">
+        <button class="btn primary" type="submit">${t('ranking.submit')}</button>
+      </div>
+      <p class="rank-entry-hint">${t('ranking.nameLabel')}${opts.hint ? `<br>${opts.hint}` : ''}</p>
+    </form>`);
+  const input = el.querySelector('input')!;
+  const submit = el.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const sync = () => {
+    const clean = cleanName(input.value);
+    if (input.value !== clean) input.value = clean;
+    submit.disabled = !isValidName(clean);
+  };
+  // 한글 자판으로 치는 중에는 조합이 끝난 뒤에 거른다
+  input.addEventListener('input', (e) => (e as InputEvent).isComposing || sync());
+  input.addEventListener('compositionend', sync);
+  sync();
+  const hint = el.querySelector<HTMLElement>('.rank-entry-hint')!;
+  const hintText = hint.innerHTML;
+  let sending = false;
+  el.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    sync();
+    if (submit.disabled || sending) return;
+    sending = true;
+    submit.disabled = input.disabled = true;
+    hint.textContent = t('ranking.sending');
+    let place: number;
+    try {
+      place = await opts.onSubmit(input.value);
+    } catch {
+      // 연결이 안 되면 기록은 등록 대기로 남아 있으니 다시 누르거나 나중에 올리면 된다
+      sending = false;
+      input.disabled = false;
+      sync();
+      hint.innerHTML = `<span class="rank-error">${t('ranking.failed')}</span><br>${hintText}`;
+      return;
+    }
+    el.classList.add('done');
+    el.innerHTML =
+      place < 0
+        ? `<p class="rank-entry-title" role="status">${MORE_ICONS.trophy}<span>${t('ranking.missed')}</span></p>`
+        : `<p class="rank-entry-title" role="status">${MORE_ICONS.trophy}<span>${t('ranking.done', { n: place + 1 })}</span></p>`;
+    if (opts.onView) el.insertAdjacentHTML('beforeend', `<button class="btn" type="button" data-view>${t('ranking.open')}</button>`);
+    const view = el.querySelector<HTMLButtonElement>('[data-view]');
+    view?.addEventListener('click', () => opts.onView!(place < 0 ? null : place));
+    view?.focus();
+  });
+  return el;
+}
+
+/**
+ * 랭킹 창. 클래식·오늘의 챌린지 순위표를 탭으로 바꿔 보고, 등록 대기 기록이 있으면 맨 위에서 올린다.
+ * mark는 방금 올린 순위(0부터)로, 그 줄을 강조한다
+ */
+function openRanking(host: HTMLElement, view: RankingView, start: Mode, mark: number | null, onChange?: () => void): void {
+  const { save } = view;
+  let mode = start;
+  let highlight = mark;
+  const box = html(`
+    <div class="ranking">
+      ${closeButton()}
+      <h2>${MORE_ICONS.trophy} ${t('ranking.title')}</h2>
+      <div class="seg" role="group">
+        <button data-board="classic">${t('mode.classic')}</button>
+        <button data-board="daily">${t('start.daily')}</button>
+      </div>
+      <p class="note rank-note"></p>
+      <div class="rank-pending"></div>
+      <ol class="rank-list"></ol>
+    </div>`);
+  const list = box.querySelector<HTMLElement>('.rank-list')!;
+  const slot = box.querySelector<HTMLElement>('.rank-pending')!;
+
+  // 탭마다 온라인 순위표를 받아 온다. 받는 동안과 오프라인일 때는 기기에 남은 순위를 보여 준다
+  const status: Record<Mode, 'loading' | 'online' | 'offline'> = { classic: 'loading', daily: 'loading' };
+  const fetchBoard = (m: Mode) => {
+    status[m] = 'loading';
+    view.refresh(m).then((ok) => {
+      status[m] = ok ? 'online' : 'offline';
+      if (mode !== m || !box.isConnected) return;
+      // 등록 대기 카드에 이름을 치는 중이면 카드는 그대로 두고 순위표만 바꾼다
+      if (slot.contains(document.activeElement)) {
+        renderNote();
+        renderList();
+      } else {
+        render();
+      }
+    });
+  };
+  const renderNote = () => {
+    const note = box.querySelector('.rank-note')!;
+    note.textContent =
+      status[mode] === 'loading' ? t('ranking.loading')
+      : status[mode] === 'offline' ? t('ranking.offline')
+      : mode === 'daily' ? t('ranking.dailyNote', { date: view.todayLabel })
+      : t('ranking.classicNote');
+    note.classList.toggle('rank-error', status[mode] === 'offline');
+  };
+  const renderList = () => {
+    const entries = boardEntries(save.rankings, mode, view.today);
+    list.classList.toggle('with-date', mode === 'classic');
+    list.innerHTML = Array.from({ length: RANK_SIZE }, (_, i) => {
+      const e = entries[i];
+      const cls = [i < 3 ? `top top${i + 1}` : '', e ? '' : 'empty', e && i === highlight ? 'me' : ''].filter(Boolean).join(' ');
+      return `<li class="${cls}"><span class="no">${i + 1}</span><span class="name">${e ? e.name : '-----'}</span><span class="score">${e ? e.score.toLocaleString() : '-'}</span>${mode === 'classic' ? `<span class="date">${e ? shortDate(e.date) : ''}</span>` : ''}</li>`;
+    }).join('');
+  };
+
+  const render = () => {
+    box.querySelectorAll<HTMLButtonElement>('[data-board]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.board === mode)));
+    renderNote();
+    const entries = boardEntries(save.rankings, mode, view.today);
+    const score = pendingScore(save.rankings, save.pending, mode, view.today);
+    const board = mode;
+    slot.replaceChildren(
+      ...(score > 0
+        ? [
+            rankEntryForm({
+              title: t('ranking.pending', { score, n: placeOf(entries, score) + 1 }),
+              name: save.playerName,
+              onSubmit: async (name) => {
+                const place = await view.register(board, name, score);
+                highlight = place < 0 ? null : place;
+                onChange?.();
+                // 올린 결과는 순위표 강조로 보여 주므로, 밀려났을 때만 카드의 안내를 남긴다
+                if (place >= 0) render();
+                else renderList();
+                return place;
+              },
+            }),
+          ]
+        : !entries.length
+          ? [html(`<p class="note rank-empty">${t('ranking.empty')}</p>`)]
+          : []),
+    );
+    renderList();
+  };
+  box.querySelectorAll<HTMLButtonElement>('[data-board]').forEach((b) =>
+    b.addEventListener('click', () => {
+      if (b.dataset.board === mode) return;
+      mode = b.dataset.board as Mode;
+      highlight = null;
+      if (status[mode] !== 'online') fetchBoard(mode);
+      render();
+    }),
+  );
+  render();
+  fetchBoard(mode);
+  openModal(host, box, t('ranking.title'));
+}
+
 /* ---------- 게임 화면 ---------- */
 
 export interface GameView {
@@ -539,6 +736,7 @@ export function resultScreen(opts: {
   onHome: () => void;
   onShare: (image: Blob | null) => Promise<ShareOutcome>;
   onShareLink: () => Promise<ShareOutcome>;
+  ranking: RankingView;
 }): HTMLElement {
   const { result } = opts;
   const { stats } = result;
@@ -585,6 +783,32 @@ export function resultScreen(opts: {
   countUp(q('.final-score'), result.score);
   if (opts.isRecord) setTimeout(() => confetti(q('.confetti-layer')), 400);
 
+  // 10위 안에 들면 점수 바로 아래에서 이름을 받는다. 그냥 넘어가도 등록 대기로 남아 메인의 랭킹에서 올릴 수 있다
+  // 먼저 기기에 남은 순위표로 판단해 바로 보여 주고, 온라인 순위표를 받으면 자리를 다시 맞춘다
+  const mode: Mode = opts.daily ? 'daily' : 'classic';
+  let entryForm: HTMLElement | null = null;
+  const showEntry = (place: number) => {
+    // 이미 등록했거나 이름을 치는 중이면 건드리지 않는다
+    if (entryForm && (entryForm.classList.contains('done') || entryForm.contains(document.activeElement) && document.activeElement?.tagName === 'INPUT')) return;
+    const typed = entryForm?.querySelector('input')?.value;
+    const hadFocus = !!entryForm?.contains(document.activeElement);
+    entryForm?.remove();
+    entryForm =
+      place >= 0
+        ? rankEntryForm({
+            title: t('ranking.enter', { n: place + 1 }),
+            name: typed ?? opts.ranking.save.playerName,
+            hint: t('ranking.later'),
+            onSubmit: (name) => opts.ranking.register(mode, name, result.score),
+            onView: (at) => openRanking(el, opts.ranking, mode, at),
+          })
+        : null;
+    if (entryForm) q('.kills').before(entryForm);
+    if (hadFocus) (entryForm?.querySelector<HTMLButtonElement>('[type="submit"]:not(:disabled)') ?? q('[data-act="retry"]')).focus();
+  };
+  showEntry(opts.ranking.consider(mode, result.score));
+  opts.ranking.refresh(mode).then((ok) => ok && el.isConnected && showEntry(opts.ranking.consider(mode, result.score)));
+
   q('[data-act="retry"]').addEventListener('click', opts.onRetry);
   q('[data-act="home"]').addEventListener('click', opts.onHome);
   // 공유 시트는 클릭 직후에 열어야 하므로, 점수·별 연출이 끝나면 미리 결과 이미지를 찍어 둔다
@@ -622,6 +846,8 @@ export function resultScreen(opts: {
     if (outcome !== 'cancelled' && outcome !== 'failed') linkBtn.hidden = true;
     linkBtn.disabled = false;
   });
-  setTimeout(() => q('[data-act="retry"]').focus(), 0);
+  // 이름이 미리 채워져 있으면 Enter 한 번에 등록되도록 등록 버튼에 초점을 둔다(휴대폰 자판이 저절로 뜨지 않게 입력 칸은 피한다)
+  const submit = (entryForm as HTMLElement | null)?.querySelector<HTMLButtonElement>('[type="submit"]');
+  setTimeout(() => (submit && !submit.disabled ? submit : q('[data-act="retry"]')).focus(), 0);
   return el;
 }

@@ -40,6 +40,7 @@ export const THEME_ICONS: Record<Theme, string> = {
 
 export const MORE_ICONS = {
   close: ui('<path d="M18 6 6 18M6 6l12 12"/>'),
+  trophy: ui('<path class="fill" d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v3M8 20h8M9.5 17h5v3h-5z"/>'),
   chevronLeft: ui('<path d="m15 5-7 7 7 7"/>'),
   chevronRight: ui('<path d="m9 5 7 7-7 7"/>'),
   share: ui('<circle class="fill" cx="18" cy="5" r="3"/><circle class="fill" cx="6" cy="12" r="3"/><circle class="fill" cx="18" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>'),

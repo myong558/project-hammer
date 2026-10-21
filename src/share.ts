@@ -51,7 +51,7 @@ export async function captureResult(el: HTMLElement): Promise<Blob | null> {
   const { toBlob } = await import('html-to-image');
   const clone = el.cloneNode(true) as HTMLElement;
   clone.classList.add('capturing');
-  clone.querySelectorAll('.actions, .toast, .confetti-layer').forEach((n) => n.remove());
+  clone.querySelectorAll('.actions, .toast, .confetti-layer, .rank-entry').forEach((n) => n.remove());
   const brand = document.createElement('p');
   brand.className = 'share-brand';
   brand.innerHTML = `<img src="${new URL('favicon.svg', document.baseURI).href}" alt="">${t('app.title')}`;

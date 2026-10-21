@@ -4097,3 +4097,255 @@ body {
 .gauge em:lang(ko) {
   letter-spacing: 0.04em;
 }
+
+/* ---------- 랭킹: 메인의 랭킹 버튼 · 결과 화면의 등록 카드 · 랭킹 창 ---------- */
+
+.rank-btn {
+  position: relative;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.4em;
+  width: fit-content;
+  margin-inline: auto;
+  padding: 0.35em 1.1em 0.35em 0.8em;
+  border-radius: 999px;
+  font-size: max(18px, 0.9em);
+  box-shadow: 0 0.18em 0 var(--border);
+}
+
+.rank-btn .icon,
+.rank-entry-title .icon,
+.ranking h2 .icon {
+  width: 1.2em;
+  height: 1.2em;
+  color: var(--accent);
+}
+
+/* 아직 등록하지 않은 기록이 있으면 버튼 모서리에 점을 찍는다 */
+.rank-dot {
+  position: absolute;
+  top: -0.2em;
+  right: -0.2em;
+  width: 0.7em;
+  height: 0.7em;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 900ms ease-in-out infinite;
+}
+
+.rank-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.45em;
+  width: 100%;
+  padding: 0.6em 0.7em;
+  border: 2px solid var(--accent);
+  border-radius: 0.9em;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  text-align: center;
+}
+
+.result .rank-entry {
+  animation: rank-pop 450ms 700ms cubic-bezier(0.3, 1.5, 0.6, 1) backwards;
+}
+
+@keyframes rank-pop {
+  from { transform: scale(0.8); opacity: 0; }
+}
+
+.rank-entry-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  font-size: max(18px, 0.95em);
+  font-weight: 700;
+}
+
+.rank-entry-title b {
+  color: var(--accent);
+}
+
+.rank-entry-row {
+  display: flex;
+  gap: 0.4em;
+}
+
+.rank-entry input {
+  flex: 1;
+  min-width: 0;
+  /* 입력 칸의 기본 너비(글자 20자분) 때문에 카드가 화면 밖으로 넓어지지 않게, 남는 폭만 쓴다 */
+  width: 0;
+  padding: 0.35em 0.5em;
+  border: 2px solid var(--border);
+  border-radius: 0.7em;
+  background: var(--surface);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: max(18px, 1.15em);
+  letter-spacing: 0.25em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.rank-entry input::placeholder {
+  color: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+
+.rank-entry input:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rank-entry .btn {
+  width: auto;
+  padding: 0.35em 1em;
+  font-size: max(18px, 0.95em);
+}
+
+.rank-entry .btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rank-entry-hint {
+  font-size: max(18px, 0.7em);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.rank-entry.done {
+  border-style: dashed;
+}
+
+/* 연결이 안 될 때의 안내 */
+.rank-error,
+.ranking .note.rank-error {
+  color: var(--bad);
+}
+
+.ranking {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55em;
+}
+
+.modal:has(.ranking) {
+  overflow-y: auto;
+}
+
+.ranking h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+}
+
+.ranking .seg {
+  display: flex;
+  width: 100%;
+}
+
+.ranking .seg button {
+  min-width: 0;
+  padding-inline: 0.5em;
+}
+
+.ranking .note {
+  font-size: max(18px, 0.7em);
+  color: var(--muted);
+}
+
+.rank-pending:empty {
+  display: none;
+}
+
+.rank-list {
+  display: grid;
+  gap: 0.2em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-list li {
+  display: grid;
+  grid-template-columns: 1.8em 1fr auto;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.2em 0.6em;
+  border-radius: 0.6em;
+  background: color-mix(in srgb, var(--border) 18%, transparent);
+  font-size: max(18px, 0.9em);
+  text-align: left;
+}
+
+.rank-list.with-date li {
+  grid-template-columns: 1.8em 1fr auto 2.8em;
+}
+
+.rank-list .no {
+  font-family: var(--font-display);
+  text-align: center;
+  color: var(--muted);
+}
+
+.rank-list .name {
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+}
+
+.rank-list .score {
+  font-weight: 700;
+  text-align: right;
+}
+
+.rank-list .date {
+  font-size: max(18px, 0.75em);
+  color: var(--muted);
+  text-align: right;
+}
+
+.rank-list .top .no {
+  color: var(--accent-fg);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.rank-list .top1 .no { background: #f4b400; }
+.rank-list .top2 .no { background: #a7adb8; }
+.rank-list .top3 .no { background: #c98a52; }
+
+.rank-list .empty {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.rank-list .empty .no {
+  background: none;
+  color: var(--muted);
+}
+
+/* 방금 올린 기록 */
+.rank-list .me {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  outline: 2px solid var(--accent);
+  animation: rank-flash 700ms ease-in-out 3;
+}
+
+@keyframes rank-flash {
+  50% { background: color-mix(in srgb, var(--accent) 45%, var(--surface)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-dot,
+  .rank-list .me,
+  .result .rank-entry {
+    animation: none;
+  }
+}

@@ -1,7 +1,7 @@
 {
   "name": "project-hammer",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,6 +19,7 @@
   },
   "packageManager": "pnpm@12.8.1",
   "dependencies": {
+    "firebase": "^13.0.0",
     "html-to-image": "1.11.13"
   }
 }
