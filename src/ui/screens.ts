@@ -506,8 +506,15 @@ function rankEntryForm(opts: {
     sync();
     if (submit.disabled || sending) return;
     sending = true;
+    // 등록하는 동안과 등록한 뒤에도 카드 높이를 그대로 둬서 아래 요소가 위아래로 덜컥이지 않게 한다
+    const height = el.offsetHeight;
+    el.style.minHeight = `${height}px`;
+    const label = submit.textContent!;
+    submit.style.minWidth = `${submit.offsetWidth}px`;
     submit.disabled = input.disabled = true;
-    hint.textContent = t('ranking.sending');
+    // 안내 줄이 없는 카드(결과 화면)는 새 줄을 띄우지 않고 버튼 안에 진행 표시를 한다
+    if (opts.compact) submit.textContent = '…';
+    else hint.textContent = t('ranking.sending');
     let place: number;
     try {
       place = await opts.onSubmit(input.value);
@@ -515,11 +522,15 @@ function rankEntryForm(opts: {
       // 연결이 안 되면 기록은 등록 대기로 남아 있으니 다시 누르거나 나중에 올리면 된다
       sending = false;
       input.disabled = false;
+      submit.textContent = label;
+      submit.style.minWidth = '';
+      el.style.minHeight = '';
       sync();
       hint.innerHTML = `<span class="rank-error">${t('ranking.failed')}</span>${hintText ? `<br>${hintText}` : ''}`;
       return;
     }
     el.classList.add('done');
+    el.style.height = `${height}px`;
     el.innerHTML =
       place < 0
         ? `<p class="rank-entry-title" role="status">${MORE_ICONS.trophy}<span>${t('ranking.missed')}</span></p>`

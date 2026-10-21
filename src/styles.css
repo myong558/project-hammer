@@ -4231,6 +4231,8 @@ body {
 
 .rank-entry.done {
   border-style: dashed;
+  /* 입력하던 카드와 같은 높이 안에서 가운데에 놓는다 */
+  align-content: center;
 }
 
 .rank-entry-hint:empty {
